@@ -70,6 +70,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [showCountryList, setShowCountryList] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showTerritories, setShowTerritories] = useState(true);
+  const [editingCountry, setEditingCountry] = useState<Country | null>(null);
+  const [newVisitDate, setNewVisitDate] = useState('');
+  const [showTip, setShowTip] = useState(true);
 
   const getCountryByGeo = (geo: any): Country | undefined => {
     let isoCode = countryIdToIso[geo.id];
@@ -110,7 +113,12 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
     if (isoCode) {
       const country = countries.find((c) => c.code === isoCode);
       if (country) {
-        onToggleCountry(isoCode, new Date().toISOString());
+        // If already visited, just toggle it off. Otherwise, mark as visited with current date
+        if (country.visited) {
+          onToggleCountry(isoCode); // Toggle off (no date param)
+        } else {
+          onToggleCountry(isoCode, new Date().toISOString());
+        }
       }
     }
   };
@@ -137,6 +145,43 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const handleMoveEnd = (position: any) => {
     setCenter(position.coordinates);
     setZoom(position.zoom);
+  };
+
+  const handleCountryListClick = (country: Country, e: React.MouseEvent) => {
+    // If country is already visited, show edit modal
+    if (country.visited) {
+      e.stopPropagation();
+      setEditingCountry(country);
+      // Convert ISO date to YYYY-MM-DD format for input
+      const dateValue = country.visitDate ? country.visitDate.split('T')[0] : new Date().toISOString().split('T')[0];
+      setNewVisitDate(dateValue);
+    } else {
+      // Mark as visited with current date
+      onToggleCountry(country.code, new Date().toISOString());
+    }
+  };
+
+  const handleSaveDate = () => {
+    if (editingCountry && newVisitDate) {
+      // Convert to ISO string
+      const isoDate = new Date(newVisitDate).toISOString();
+      onToggleCountry(editingCountry.code, isoDate);
+      setEditingCountry(null);
+      setNewVisitDate('');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCountry(null);
+    setNewVisitDate('');
+  };
+
+  const handleUnmarkVisit = () => {
+    if (editingCountry) {
+      onToggleCountry(editingCountry.code);
+      setEditingCountry(null);
+      setNewVisitDate('');
+    }
   };
 
   const regularCountries = countries.filter(c => !c.isTerritory);
@@ -269,7 +314,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                 <div
                   key={country.code}
                   className={`country-list-item ${country.visited ? 'visited' : ''}`}
-                  onClick={() => onToggleCountry(country.code, new Date().toISOString())}
+                  onClick={(e) => handleCountryListClick(country, e)}
                 >
                   <span className="country-name">{country.name}</span>
                   <span className="country-status">{country.visited ? '✓' : ''}</span>
@@ -293,7 +338,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                     <div
                       key={territory.code}
                       className={`country-list-item territory ${territory.visited ? 'visited' : ''}`}
-                      onClick={() => onToggleCountry(territory.code, new Date().toISOString())}
+                      onClick={(e) => handleCountryListClick(territory, e)}
                     >
                       <span className="country-name">{territory.name}</span>
                       <span className="country-status">{territory.visited ? '✓' : ''}</span>
@@ -306,12 +351,49 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
         )}
       </div>
 
-      <div className="map-info">
-        <p>💡 <strong>Tip:</strong> Use scroll wheel to zoom, drag to pan, or use the + / - buttons. Can't find a small country? Click the ☰ button to access the full country list!</p>
-        <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
-          Note: Disputed territories (Greenland, Western Sahara, Somaliland, Northern Cyprus, Antarctica) are available as optional trackable areas in the country list.
-        </p>
-      </div>
+      {showTip && (
+        <div className="map-info">
+          <button
+            onClick={() => setShowTip(false)}
+            className="close-tip-btn"
+            title="Dismiss tip"
+          >
+            ×
+          </button>
+          <p>💡 <strong>Tip:</strong> Use scroll wheel to zoom, drag to pan, or use the + / - buttons. Can't find a small country? Click the ☰ button to access the full country list!</p>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
+            Note: Disputed territories (Greenland, Western Sahara, Somaliland, Northern Cyprus, Antarctica) are available as optional trackable areas in the country list.
+          </p>
+        </div>
+      )}
+
+      {editingCountry && (
+        <div className="modal-overlay" onClick={handleCancelEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Edit Visit for {editingCountry.name}</h3>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a0aec0' }}>
+              Visit Date:
+            </label>
+            <input
+              type="date"
+              value={newVisitDate}
+              onChange={(e) => setNewVisitDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+            />
+            <div className="modal-actions">
+              <button onClick={handleUnmarkVisit} className="btn-secondary" style={{ marginRight: 'auto' }}>
+                Unmark as Visited
+              </button>
+              <button onClick={handleCancelEdit} className="btn-secondary">
+                Cancel
+              </button>
+              <button onClick={handleSaveDate} className="btn-primary">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

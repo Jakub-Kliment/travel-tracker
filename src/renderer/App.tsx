@@ -58,6 +58,14 @@ const App: React.FC = () => {
     setTravelData((prevData) => {
       const updatedCountries = prevData.countries.map((country) => {
         if (country.code === countryCode) {
+          // If visitDate is provided and country is already visited, just update the date
+          if (visitDate && country.visited) {
+            return {
+              ...country,
+              visitDate: visitDate,
+            };
+          }
+          // Otherwise toggle the visited status
           return {
             ...country,
             visited: !country.visited,

@@ -44,11 +44,11 @@ export const calculateStatistics = (countries: Country[]): Statistics => {
     }
   });
 
-  // Convert to timeline entries and sort by date
+  // Convert to timeline entries and sort by date (most recent first)
   dateMap.forEach((countryNames, date) => {
     timeline.push({ date, countries: countryNames });
   });
-  timeline.sort((a, b) => a.date.localeCompare(b.date));
+  timeline.sort((a, b) => b.date.localeCompare(a.date));
 
   return {
     totalCountries,

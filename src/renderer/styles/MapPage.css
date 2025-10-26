@@ -182,8 +182,8 @@
 }
 
 .zoom-btn:hover {
-  background: rgba(72, 187, 120, 0.9);
-  border-color: #48bb78;
+  background: rgba(102, 126, 234, 0.9);
+  border-color: #667eea;
   transform: translateY(-2px);
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
 }
@@ -204,11 +204,37 @@
   border-left: 3px solid #48bb78;
   border-radius: 8px;
   color: #e2e8f0;
+  position: relative;
 }
 
 .map-info p {
   margin: 0;
   font-size: 0.95rem;
+}
+
+.close-tip-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.close-tip-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
 }
 
 /* Country List Panel */

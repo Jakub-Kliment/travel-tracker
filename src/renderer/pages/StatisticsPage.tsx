@@ -154,7 +154,12 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
           <h3>Visited Countries ({visitedCountries.length})</h3>
           <div className="country-list">
             {visitedCountries
-              .sort((a, b) => a.name.localeCompare(b.name))
+              .sort((a, b) => {
+                // Sort by visit date, most recent first
+                const dateA = a.visitDate ? new Date(a.visitDate).getTime() : 0;
+                const dateB = b.visitDate ? new Date(b.visitDate).getTime() : 0;
+                return dateB - dateA;
+              })
               .map((country) => (
                 <div key={country.code} className="country-item visited">
                   <span>{country.name}</span>
