@@ -70,3 +70,6 @@ The packaged application will be in the `release` folder.
 - **react-simple-maps**: Interactive world map
 - **Recharts**: Charts and data visualization
 - **Webpack**: Module bundler
+
+## LTS 
+v1.1.0
