@@ -69,13 +69,27 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [center, setCenter] = useState<[number, number]>([0, 20]);
 
   const getCountryByGeo = (geo: any): Country | undefined => {
-    const isoCode = countryIdToIso[geo.id];
+    let isoCode = countryIdToIso[geo.id];
+
+    // Handle territories with N/A IDs by checking name
+    if (!isoCode && geo.properties?.name) {
+      const name = geo.properties.name.toLowerCase();
+      if (name.includes('kosovo')) isoCode = 'XKX';
+    }
+
     if (!isoCode) return undefined;
     return countries.find((c) => c.code === isoCode);
   };
 
   const handleCountryClick = (geo: any) => {
-    const isoCode = countryIdToIso[geo.id];
+    let isoCode = countryIdToIso[geo.id];
+
+    // Handle territories with N/A IDs by checking name
+    if (!isoCode && geo.properties?.name) {
+      const name = geo.properties.name.toLowerCase();
+      if (name.includes('kosovo')) isoCode = 'XKX';
+    }
+
     if (isoCode) {
       const country = countries.find((c) => c.code === isoCode);
       if (country) {
