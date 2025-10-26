@@ -4,6 +4,7 @@ export interface Country {
   visited: boolean;
   visitDate?: string;
   continent: string;
+  isTerritory?: boolean; // For disputed territories/dependencies
 }
 
 export interface TravelData {

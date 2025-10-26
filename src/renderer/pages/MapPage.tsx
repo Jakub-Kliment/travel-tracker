@@ -67,15 +67,25 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState<[number, number]>([0, 20]);
+  const [showCountryList, setShowCountryList] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showTerritories, setShowTerritories] = useState(true);
 
   const getCountryByGeo = (geo: any): Country | undefined => {
     let isoCode = countryIdToIso[geo.id];
 
-    // Handle territories with N/A IDs by checking name
+    // Handle territories with N/A IDs or special names by checking name
     if (!isoCode && geo.properties?.name) {
       const name = geo.properties.name.toLowerCase();
       if (name.includes('kosovo')) isoCode = 'XKX';
+      else if (name.includes('somaliland')) isoCode = 'SOL';
+      else if (name.includes('n. cyprus') || name.includes('northern cyprus')) isoCode = 'NCY';
     }
+
+    // Map known territory IDs to our codes
+    if (geo.id === '304') isoCode = 'GRL'; // Greenland
+    if (geo.id === '732') isoCode = 'ESH'; // Western Sahara
+    if (geo.id === '010') isoCode = 'ATA'; // Antarctica
 
     if (!isoCode) return undefined;
     return countries.find((c) => c.code === isoCode);
@@ -84,11 +94,18 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const handleCountryClick = (geo: any) => {
     let isoCode = countryIdToIso[geo.id];
 
-    // Handle territories with N/A IDs by checking name
+    // Handle territories with N/A IDs or special names by checking name
     if (!isoCode && geo.properties?.name) {
       const name = geo.properties.name.toLowerCase();
       if (name.includes('kosovo')) isoCode = 'XKX';
+      else if (name.includes('somaliland')) isoCode = 'SOL';
+      else if (name.includes('n. cyprus') || name.includes('northern cyprus')) isoCode = 'NCY';
     }
+
+    // Map known territory IDs to our codes
+    if (geo.id === '304') isoCode = 'GRL'; // Greenland
+    if (geo.id === '732') isoCode = 'ESH'; // Western Sahara
+    if (geo.id === '010') isoCode = 'ATA'; // Antarctica
 
     if (isoCode) {
       const country = countries.find((c) => c.code === isoCode);
@@ -100,13 +117,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
 
   const getCountryFill = (geo: any): string => {
     const country = getCountryByGeo(geo);
-    if (!country) return '#4a5568';
+    if (!country) return '#3a3a4a'; // Darker gray for territories/dependencies
     return country.visited ? '#48bb78' : '#4a5568';
   };
-
-  const visitedCount = countries.filter((c) => c.visited).length;
-  const totalCount = countries.length;
-  const percentage = ((visitedCount / totalCount) * 100).toFixed(1);
 
   const handleZoomIn = () => {
     if (zoom < 8) setZoom(zoom + 1);
@@ -126,14 +139,33 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
     setZoom(position.zoom);
   };
 
+  const regularCountries = countries.filter(c => !c.isTerritory);
+  const territories = countries.filter(c => c.isTerritory);
+
+  const filteredCountries = regularCountries
+    .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const filteredTerritories = territories
+    .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const visitedCountriesCount = regularCountries.filter(c => c.visited).length;
+  const visitedTerritoriesCount = territories.filter(c => c.visited).length;
+
   return (
     <div className="map-page">
       <div className="map-header">
         <div className="map-stats">
           <h2>
-            {visitedCount} / {totalCount} Countries Visited
+            {visitedCountriesCount} / {regularCountries.length} Countries Visited
           </h2>
-          <p className="percentage">{percentage}% of the world explored</p>
+          <p className="percentage">{((visitedCountriesCount / regularCountries.length) * 100).toFixed(1)}% of the world explored</p>
+          {visitedTerritoriesCount > 0 && (
+            <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', opacity: 0.8 }}>
+              +{visitedTerritoriesCount} territories
+            </p>
+          )}
         </div>
         <div className="map-legend">
           <div className="legend-item">
@@ -209,11 +241,76 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
           <button onClick={handleZoomIn} className="zoom-btn" title="Zoom In">+</button>
           <button onClick={handleZoomOut} className="zoom-btn" title="Zoom Out">-</button>
           <button onClick={handleReset} className="zoom-btn reset-btn" title="Reset View">⟲</button>
+          <button
+            onClick={() => setShowCountryList(!showCountryList)}
+            className="zoom-btn list-btn"
+            title="Country List"
+            style={{ fontSize: '1.2rem' }}
+          >
+            ☰
+          </button>
         </div>
+
+        {showCountryList && (
+          <div className="country-list-panel">
+            <div className="country-list-header">
+              <h3>All Countries ({regularCountries.length})</h3>
+              <button onClick={() => setShowCountryList(false)} className="close-btn">×</button>
+            </div>
+            <input
+              type="text"
+              placeholder="Search countries..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="country-search"
+            />
+            <div className="country-list-scroll">
+              {filteredCountries.map(country => (
+                <div
+                  key={country.code}
+                  className={`country-list-item ${country.visited ? 'visited' : ''}`}
+                  onClick={() => onToggleCountry(country.code, new Date().toISOString())}
+                >
+                  <span className="country-name">{country.name}</span>
+                  <span className="country-status">{country.visited ? '✓' : ''}</span>
+                </div>
+              ))}
+
+              {filteredTerritories.length > 0 && (
+                <>
+                  <div className="territory-divider">
+                    <label className="territory-toggle">
+                      <input
+                        type="checkbox"
+                        checked={showTerritories}
+                        onChange={(e) => setShowTerritories(e.target.checked)}
+                      />
+                      <span>Show Territories/Disputed Areas ({territories.length})</span>
+                    </label>
+                  </div>
+
+                  {showTerritories && filteredTerritories.map(territory => (
+                    <div
+                      key={territory.code}
+                      className={`country-list-item territory ${territory.visited ? 'visited' : ''}`}
+                      onClick={() => onToggleCountry(territory.code, new Date().toISOString())}
+                    >
+                      <span className="country-name">{territory.name}</span>
+                      <span className="country-status">{territory.visited ? '✓' : ''}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="map-info">
-        <p>💡 <strong>Tip:</strong> Use scroll wheel to zoom, drag to pan, or use the + / - buttons. Zoom in to see small countries!</p>
+        <p>💡 <strong>Tip:</strong> Use scroll wheel to zoom, drag to pan, or use the + / - buttons. Can't find a small country? Click the ☰ button to access the full country list!</p>
+        <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
+          Note: Disputed territories (Greenland, Western Sahara, Somaliland, Northern Cyprus, Antarctica) are available as optional trackable areas in the country list.
+        </p>
       </div>
     </div>
   );

@@ -211,5 +211,12 @@ export const getAllCountries = (): Country[] => {
     { code: 'TON', name: 'Tonga', visited: false, continent: 'Oceania' },
     { code: 'TUV', name: 'Tuvalu', visited: false, continent: 'Oceania' },
     { code: 'VUT', name: 'Vanuatu', visited: false, continent: 'Oceania' },
+
+    // Disputed Territories & Dependencies (optional to track)
+    { code: 'GRL', name: 'Greenland', visited: false, continent: 'North America', isTerritory: true },
+    { code: 'ESH', name: 'Western Sahara', visited: false, continent: 'Africa', isTerritory: true },
+    { code: 'SOL', name: 'Somaliland', visited: false, continent: 'Africa', isTerritory: true },
+    { code: 'NCY', name: 'Northern Cyprus', visited: false, continent: 'Europe', isTerritory: true },
+    { code: 'ATA', name: 'Antarctica', visited: false, continent: 'Antarctica', isTerritory: true },
   ];
 };
