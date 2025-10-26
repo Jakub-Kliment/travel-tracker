@@ -20,7 +20,17 @@ const App: React.FC = () => {
       try {
         const result = await window.electronAPI.autoLoadData();
         if (result.success && result.data) {
-          setTravelData(result.data);
+          // Merge loaded data with current country list to include new territories
+          const allCountries = getAllCountries();
+          const loadedData = result.data;
+          const mergedCountries = allCountries.map(country => {
+            const savedCountry = loadedData.countries.find(c => c.code === country.code);
+            return savedCountry ? { ...country, visited: savedCountry.visited, visitDate: savedCountry.visitDate } : country;
+          });
+          setTravelData({
+            countries: mergedCountries,
+            lastUpdated: loadedData.lastUpdated
+          });
         }
       } catch (error) {
         console.error('Failed to auto-load data:', error);
