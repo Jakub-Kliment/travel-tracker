@@ -72,7 +72,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {pieData.map((entry, index) => (
+                {pieData.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={index === 0 ? '#48bb78' : '#2d3748'} />
                 ))}
               </Pie>

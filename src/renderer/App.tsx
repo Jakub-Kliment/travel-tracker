@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MapPage from './pages/MapPage';
 import StatisticsPage from './pages/StatisticsPage';
-import { TravelData, Country } from '../shared/types';
+import { TravelData } from '../shared/types';
 import { getAllCountries } from './utils/countries';
 import './styles/App.css';
 

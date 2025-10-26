@@ -48,7 +48,7 @@ app.on('activate', () => {
 // IPC handlers for file operations
 
 // Save data to file
-ipcMain.handle('save-data', async (event, data) => {
+ipcMain.handle('save-data', async (_event, data) => {
   try {
     const { filePath } = await dialog.showSaveDialog({
       title: 'Save Travel Data',
@@ -88,7 +88,7 @@ ipcMain.handle('load-data', async () => {
 });
 
 // Auto-save data to a default location
-ipcMain.handle('auto-save-data', async (event, data) => {
+ipcMain.handle('auto-save-data', async (_event, data) => {
   try {
     const autoSavePath = path.join(app.getPath('userData'), 'travel-data.json');
     fs.writeFileSync(autoSavePath, JSON.stringify(data, null, 2));

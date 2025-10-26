@@ -96,8 +96,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
         >
           <ZoomableGroup>
             <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => {
+              {({ geographies }: { geographies: any[] }) =>
+                geographies.map((geo: any) => {
                   const country = getCountryByCode(geo.id);
                   return (
                     <Geography
