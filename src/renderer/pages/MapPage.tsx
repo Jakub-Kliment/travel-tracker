@@ -8,7 +8,8 @@ import {
 import { Country } from '../../shared/types';
 import '../styles/MapPage.css';
 
-const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+// Using Natural Earth 50m for better coverage - includes more small countries
+const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
 
 interface MapPageProps {
   countries: Country[];
@@ -64,6 +65,8 @@ const countryIdToIso: { [key: string]: string } = {
 
 const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [center, setCenter] = useState<[number, number]>([0, 20]);
 
   const getCountryByGeo = (geo: any): Country | undefined => {
     const isoCode = countryIdToIso[geo.id];
@@ -91,6 +94,24 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const totalCount = countries.length;
   const percentage = ((visitedCount / totalCount) * 100).toFixed(1);
 
+  const handleZoomIn = () => {
+    if (zoom < 8) setZoom(zoom + 1);
+  };
+
+  const handleZoomOut = () => {
+    if (zoom > 1) setZoom(zoom - 1);
+  };
+
+  const handleReset = () => {
+    setZoom(1);
+    setCenter([0, 20]);
+  };
+
+  const handleMoveEnd = (position: any) => {
+    setCenter(position.coordinates);
+    setZoom(position.zoom);
+  };
+
   return (
     <div className="map-page">
       <div className="map-header">
@@ -117,8 +138,16 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
           projectionConfig={{
             scale: 147,
           }}
+          width={800}
+          height={450}
         >
-          <ZoomableGroup>
+          <ZoomableGroup
+            zoom={zoom}
+            minZoom={1}
+            maxZoom={8}
+            center={center}
+            onMoveEnd={handleMoveEnd}
+          >
             <Geographies geography={geoUrl}>
               {({ geographies }: { geographies: any[] }) =>
                 geographies.map((geo: any) => {
@@ -161,6 +190,16 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
             {hoveredCountry}
           </div>
         )}
+
+        <div className="zoom-controls">
+          <button onClick={handleZoomIn} className="zoom-btn" title="Zoom In">+</button>
+          <button onClick={handleZoomOut} className="zoom-btn" title="Zoom Out">-</button>
+          <button onClick={handleReset} className="zoom-btn reset-btn" title="Reset View">⟲</button>
+        </div>
+      </div>
+
+      <div className="map-info">
+        <p>💡 <strong>Tip:</strong> Use scroll wheel to zoom, drag to pan, or use the + / - buttons. Zoom in to see small countries!</p>
       </div>
     </div>
   );

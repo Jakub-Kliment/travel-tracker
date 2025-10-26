@@ -152,3 +152,61 @@
   gap: 1rem;
   justify-content: flex-end;
 }
+
+/* Zoom controls */
+.zoom-controls {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 100;
+}
+
+.zoom-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(45, 55, 72, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.zoom-btn:hover {
+  background: rgba(72, 187, 120, 0.9);
+  border-color: #48bb78;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+}
+
+.zoom-btn:active {
+  transform: translateY(0);
+}
+
+.zoom-btn.reset-btn {
+  font-size: 1.75rem;
+}
+
+/* Map info tip */
+.map-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(72, 187, 120, 0.1);
+  border-left: 3px solid #48bb78;
+  border-radius: 8px;
+  color: #e2e8f0;
+}
+
+.map-info p {
+  margin: 0;
+  font-size: 0.95rem;
+}
