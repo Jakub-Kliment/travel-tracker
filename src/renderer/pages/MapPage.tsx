@@ -15,52 +15,69 @@ interface MapPageProps {
   onToggleCountry: (countryCode: string, visitDate?: string) => void;
 }
 
+// Mapping from numeric country IDs to ISO 3-letter codes
+const countryIdToIso: { [key: string]: string } = {
+  '4': 'AFG', '8': 'ALB', '12': 'DZA', '20': 'AND', '24': 'AGO', '28': 'ATG',
+  '31': 'AZE', '32': 'ARG', '36': 'AUS', '40': 'AUT', '44': 'BHS', '48': 'BHR',
+  '50': 'BGD', '51': 'ARM', '52': 'BRB', '56': 'BEL', '60': 'BMU', '64': 'BTN',
+  '68': 'BOL', '70': 'BIH', '72': 'BWA', '76': 'BRA', '84': 'BLZ', '90': 'SLB',
+  '96': 'BRN', '100': 'BGR', '104': 'MMR', '108': 'BDI', '112': 'BLR', '116': 'KHM',
+  '120': 'CMR', '124': 'CAN', '132': 'CPV', '140': 'CAF', '144': 'LKA', '148': 'TCD',
+  '152': 'CHL', '156': 'CHN', '158': 'TWN', '170': 'COL', '174': 'COM', '175': 'MYT',
+  '178': 'COG', '180': 'COD', '188': 'CRI', '191': 'HRV', '192': 'CUB', '196': 'CYP',
+  '203': 'CZE', '204': 'BEN', '208': 'DNK', '212': 'DMA', '214': 'DOM', '218': 'ECU',
+  '222': 'SLV', '226': 'GNQ', '231': 'ETH', '232': 'ERI', '233': 'EST', '242': 'FJI',
+  '246': 'FIN', '250': 'FRA', '258': 'PYF', '262': 'DJI', '266': 'GAB', '268': 'GEO',
+  '270': 'GMB', '275': 'PSE', '276': 'DEU', '288': 'GHA', '296': 'KIR', '300': 'GRC',
+  '308': 'GRD', '316': 'GUM', '320': 'GTM', '324': 'GIN', '328': 'GUY', '332': 'HTI',
+  '336': 'VAT', '340': 'HND', '348': 'HUN', '352': 'ISL', '356': 'IND', '360': 'IDN',
+  '364': 'IRN', '368': 'IRQ', '372': 'IRL', '376': 'ISR', '380': 'ITA', '384': 'CIV',
+  '388': 'JAM', '392': 'JPN', '398': 'KAZ', '400': 'JOR', '404': 'KEN', '408': 'PRK',
+  '410': 'KOR', '414': 'KWT', '417': 'KGZ', '418': 'LAO', '422': 'LBN', '426': 'LSO',
+  '428': 'LVA', '430': 'LBR', '434': 'LBY', '438': 'LIE', '440': 'LTU', '442': 'LUX',
+  '450': 'MDG', '454': 'MWI', '458': 'MYS', '462': 'MDV', '466': 'MLI', '470': 'MLT',
+  '478': 'MRT', '480': 'MUS', '484': 'MEX', '492': 'MCO', '496': 'MNG', '498': 'MDA',
+  '499': 'MNE', '504': 'MAR', '508': 'MOZ', '512': 'OMN', '516': 'NAM', '520': 'NRU',
+  '524': 'NPL', '528': 'NLD', '540': 'NCL', '548': 'VUT', '554': 'NZL', '558': 'NIC',
+  '562': 'NER', '566': 'NGA', '570': 'NIU', '578': 'NOR', '580': 'MNP', '583': 'FSM',
+  '584': 'MHL', '585': 'PLW', '586': 'PAK', '591': 'PAN', '598': 'PNG', '600': 'PRY',
+  '604': 'PER', '608': 'PHL', '612': 'PCN', '616': 'POL', '620': 'PRT', '624': 'GNB',
+  '626': 'TLS', '634': 'QAT', '642': 'ROU', '643': 'RUS', '646': 'RWA', '659': 'KNA',
+  '660': 'AIA', '662': 'LCA', '670': 'VCT', '674': 'SMR', '678': 'STP', '682': 'SAU',
+  '686': 'SEN', '688': 'SRB', '690': 'SYC', '694': 'SLE', '702': 'SGP', '703': 'SVK',
+  '704': 'VNM', '705': 'SVN', '706': 'SOM', '710': 'ZAF', '716': 'ZWE', '724': 'ESP',
+  '728': 'SSD', '729': 'SDN', '732': 'ESH', '740': 'SUR', '748': 'SWZ', '752': 'SWE',
+  '756': 'CHE', '760': 'SYR', '762': 'TJK', '764': 'THA', '768': 'TGO', '776': 'TON',
+  '780': 'TTO', '784': 'ARE', '788': 'TUN', '792': 'TUR', '795': 'TKM', '798': 'TUV',
+  '800': 'UGA', '804': 'UKR', '807': 'MKD', '818': 'EGY', '826': 'GBR', '831': 'GGY',
+  '832': 'JEY', '834': 'TZA', '840': 'USA', '850': 'VIR', '854': 'BFA', '858': 'URY',
+  '860': 'UZB', '862': 'VEN', '876': 'WLF', '882': 'WSM', '887': 'YEM', '894': 'ZMB',
+  '-99': 'XKX'  // Kosovo
+};
+
 const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [visitDate, setVisitDate] = useState('');
 
-  const getCountryByCode = (code: string): Country | undefined => {
-    return countries.find((c) => c.code === code);
+  const getCountryByGeo = (geo: any): Country | undefined => {
+    const isoCode = countryIdToIso[geo.id];
+    if (!isoCode) return undefined;
+    return countries.find((c) => c.code === isoCode);
   };
 
   const handleCountryClick = (geo: any) => {
-    const countryCode = geo.id;
-    const country = getCountryByCode(countryCode);
-
-    if (country) {
-      if (!country.visited) {
-        // If marking as visited, show date modal
-        setSelectedCountry(country);
-        setVisitDate(new Date().toISOString().split('T')[0]);
-        setShowDateModal(true);
-      } else {
-        // If unmarking, just toggle
-        onToggleCountry(countryCode);
+    const isoCode = countryIdToIso[geo.id];
+    if (isoCode) {
+      const country = countries.find((c) => c.code === isoCode);
+      if (country) {
+        onToggleCountry(isoCode, new Date().toISOString());
       }
     }
   };
 
-  const handleDateSubmit = () => {
-    if (selectedCountry && visitDate) {
-      onToggleCountry(selectedCountry.code, new Date(visitDate).toISOString());
-      setShowDateModal(false);
-      setSelectedCountry(null);
-      setVisitDate('');
-    }
-  };
-
-  const handleDateCancel = () => {
-    setShowDateModal(false);
-    setSelectedCountry(null);
-    setVisitDate('');
-  };
-
   const getCountryFill = (geo: any): string => {
-    const country = getCountryByCode(geo.id);
-    if (!country) return '#2d3748';
-    return country.visited ? '#48bb78' : '#2d3748';
+    const country = getCountryByGeo(geo);
+    if (!country) return '#4a5568';
+    return country.visited ? '#48bb78' : '#4a5568';
   };
 
   const visitedCount = countries.filter((c) => c.visited).length;
@@ -98,7 +115,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
             <Geographies geography={geoUrl}>
               {({ geographies }: { geographies: any[] }) =>
                 geographies.map((geo: any) => {
-                  const country = getCountryByCode(geo.id);
+                  const country = getCountryByGeo(geo);
                   return (
                     <Geography
                       key={geo.rsmKey}
@@ -109,7 +126,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                       style={{
                         default: { outline: 'none' },
                         hover: {
-                          fill: country?.visited ? '#38a169' : '#4a5568',
+                          fill: country?.visited ? '#38a169' : '#718096',
                           outline: 'none',
                           cursor: 'pointer',
                         },
@@ -138,28 +155,6 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
           </div>
         )}
       </div>
-
-      {showDateModal && (
-        <div className="modal-overlay" onClick={handleDateCancel}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>When did you visit {selectedCountry?.name}?</h3>
-            <input
-              type="date"
-              value={visitDate}
-              onChange={(e) => setVisitDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-            />
-            <div className="modal-actions">
-              <button onClick={handleDateCancel} className="btn-secondary">
-                Cancel
-              </button>
-              <button onClick={handleDateSubmit} className="btn-primary">
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
