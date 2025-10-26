@@ -27,6 +27,7 @@
     "directories": {
       "output": "release"
     },
+    "publish": null,
     "win": {
       "target": "nsis"
     },
