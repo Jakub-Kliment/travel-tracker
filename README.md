@@ -1,6 +1,6 @@
 # Travel Tracker
 
-A beautiful desktop application to track countries visited on an interactive world map with comprehensive statistics. Built as a personal gift.
+A desktop application to track countries visited on an interactive world map with statistics.
 
 ## Features
 
@@ -40,7 +40,7 @@ npm run build
 
 Package the application for your platform:
 ```bash
-# For your current platform
+# For current platform
 npm run package
 
 # Or for specific platforms
@@ -70,52 +70,3 @@ The packaged application will be in the `release` folder.
 - **react-simple-maps**: Interactive world map
 - **Recharts**: Charts and data visualization
 - **Webpack**: Module bundler
-
-## Project Structure
-
-```
-krajiny/
-├── src/
-│   ├── main/              # Electron main process
-│   │   ├── main.ts        # Main entry point
-│   │   └── preload.ts     # Preload script for IPC
-│   ├── renderer/          # React application
-│   │   ├── components/    # Reusable components
-│   │   ├── pages/         # Map and Statistics pages
-│   │   ├── styles/        # CSS styling
-│   │   ├── utils/         # Helper functions
-│   │   ├── App.tsx        # Main app component
-│   │   └── index.tsx      # React entry point
-│   └── shared/            # Shared types and utilities
-│       └── types.ts       # TypeScript type definitions
-├── public/                # Static assets
-├── dist/                  # Compiled output
-└── release/               # Packaged applications
-```
-
-## Data Format
-
-Your travel data is stored in JSON format:
-
-```json
-{
-  "countries": [
-    {
-      "code": "USA",
-      "name": "United States",
-      "visited": true,
-      "visitDate": "2023-06-15",
-      "continent": "North America"
-    }
-  ],
-  "lastUpdated": "2025-10-26T12:00:00.000Z"
-}
-```
-
-## License
-
-Personal project created with love
-
-## Credits
-
-Built with Claude Code
