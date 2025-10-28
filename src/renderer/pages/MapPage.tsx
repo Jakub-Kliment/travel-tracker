@@ -67,7 +67,7 @@ const countryIdToIso: { [key: string]: string } = {
 const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [hoveredCountry, setHoveredCountry] = useState<{ name: string; code: string } | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [center, setCenter] = useState<[number, number]>([0, 20]);
+  const [center, setCenter] = useState<[number, number]>([0, 0]); // Centered at equator
   const [showCountryList, setShowCountryList] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showTerritories, setShowTerritories] = useState(true);
@@ -131,16 +131,20 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   };
 
   const handleZoomIn = () => {
-    if (zoom < 8) setZoom(zoom + 1);
+    if (zoom < 4) {
+      setZoom(zoom + 0.5);
+    }
   };
 
   const handleZoomOut = () => {
-    if (zoom > 1) setZoom(zoom - 1);
+    if (zoom > 1) {
+      setZoom(Math.max(1, zoom - 0.5));
+    }
   };
 
   const handleReset = () => {
     setZoom(1);
-    setCenter([0, 20]);
+    setCenter([0, 0]);
   };
 
   const handleMoveEnd = (position: any) => {
@@ -236,7 +240,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
           <ZoomableGroup
             zoom={zoom}
             minZoom={1}
-            maxZoom={8}
+            maxZoom={4}
             center={center}
             onMoveEnd={handleMoveEnd}
           >
