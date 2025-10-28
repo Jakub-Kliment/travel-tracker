@@ -15,6 +15,7 @@ function createWindow() {
     },
     title: 'Travel Tracker',
     backgroundColor: '#1a1a2e',
+    icon: path.join(__dirname, '../../build/icon.png'),
   });
 
   // In development, load from webpack dev server
