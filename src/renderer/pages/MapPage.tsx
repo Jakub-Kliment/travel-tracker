@@ -4,6 +4,7 @@ import {
   Geographies,
   Geography,
   ZoomableGroup,
+  Sphere,
 } from 'react-simple-maps';
 import { Country } from '../../shared/types';
 import FlagIcon from '../components/FlagIcon';
@@ -64,6 +65,41 @@ const countryIdToIso: { [key: string]: string } = {
   '882': 'WSM', '887': 'YEM', '894': 'ZMB', '-99': 'XKX'  // Kosovo
 };
 
+type ProjectionType = 'geoEqualEarth' | 'geoMercator' | 'geoNaturalEarth1';
+
+type ColorScheme = 'green' | 'blue' | 'purple' | 'orange';
+
+const colorSchemes = {
+  green: {
+    visited: '#48bb78',
+    unvisited: '#4a5568',
+    visitedHover: '#38a169',
+    unvisitedHover: '#718096',
+    territory: '#3a3a4a',
+  },
+  blue: {
+    visited: '#4299e1',
+    unvisited: '#4a5568',
+    visitedHover: '#3182ce',
+    unvisitedHover: '#718096',
+    territory: '#3a3a4a',
+  },
+  purple: {
+    visited: '#9f7aea',
+    unvisited: '#4a5568',
+    visitedHover: '#805ad5',
+    unvisitedHover: '#718096',
+    territory: '#3a3a4a',
+  },
+  orange: {
+    visited: '#ed8936',
+    unvisited: '#4a5568',
+    visitedHover: '#dd6b20',
+    unvisitedHover: '#718096',
+    territory: '#3a3a4a',
+  },
+};
+
 const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [hoveredCountry, setHoveredCountry] = useState<{ name: string; code: string } | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -74,6 +110,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [editingCountry, setEditingCountry] = useState<Country | null>(null);
   const [newVisitDate, setNewVisitDate] = useState('');
   const [showTip, setShowTip] = useState(true);
+  const [projection, setProjection] = useState<ProjectionType>('geoNaturalEarth1');
+  const [colorScheme, setColorScheme] = useState<ColorScheme>('green');
 
   const getCountryByGeo = (geo: any): Country | undefined => {
     let isoCode = countryIdToIso[geo.id];
@@ -126,8 +164,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
 
   const getCountryFill = (geo: any): string => {
     const country = getCountryByGeo(geo);
-    if (!country) return '#3a3a4a'; // Darker gray for territories/dependencies
-    return country.visited ? '#48bb78' : '#4a5568';
+    const colors = colorSchemes[colorScheme];
+    if (!country) return colors.territory;
+    return country.visited ? colors.visited : colors.unvisited;
   };
 
   const handleZoomIn = () => {
@@ -150,6 +189,20 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const handleMoveEnd = (position: any) => {
     setCenter(position.coordinates);
     setZoom(position.zoom);
+  };
+
+  // Get appropriate scale based on projection
+  const getProjectionScale = () => {
+    switch (projection) {
+      case 'geoMercator':
+        return 100; // Smaller scale to fit entire world in Mercator
+      case 'geoEqualEarth':
+        return 147;
+      case 'geoNaturalEarth1':
+        return 147;
+      default:
+        return 147;
+    }
   };
 
   const handleCountryListClick = (country: Country, e: React.MouseEvent) => {
@@ -231,8 +284,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
 
       <div className="map-container">
         <ComposableMap
+          projection={projection}
           projectionConfig={{
-            scale: 147,
+            scale: getProjectionScale(),
           }}
           width={800}
           height={450}
@@ -244,6 +298,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
             center={center}
             onMoveEnd={handleMoveEnd}
           >
+            <Sphere id="ocean" stroke="#2c5282" strokeWidth={0.5} fill="#1e3a5f" />
             <Geographies geography={geoUrl}>
               {({ geographies }: { geographies: any[] }) =>
                 geographies.map((geo: any) => {
@@ -258,7 +313,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                       style={{
                         default: { outline: 'none' },
                         hover: {
-                          fill: country?.visited ? '#38a169' : '#718096',
+                          fill: country?.visited
+                            ? colorSchemes[colorScheme].visitedHover
+                            : colorSchemes[colorScheme].unvisitedHover,
                           outline: 'none',
                           cursor: 'pointer',
                         },
@@ -300,6 +357,34 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
           >
             ☰
           </button>
+        </div>
+
+        <div className="map-controls">
+          <div className="projection-selector">
+            <select
+              value={projection}
+              onChange={(e) => setProjection(e.target.value as ProjectionType)}
+              className="projection-dropdown"
+              title="Map Projection"
+            >
+              <option value="geoNaturalEarth1">Natural Earth</option>
+              <option value="geoMercator">Mercator</option>
+              <option value="geoEqualEarth">Equal Earth</option>
+            </select>
+          </div>
+          <div className="color-scheme-selector">
+            <select
+              value={colorScheme}
+              onChange={(e) => setColorScheme(e.target.value as ColorScheme)}
+              className="color-dropdown"
+              title="Color Scheme"
+            >
+              <option value="green">🟢 Green</option>
+              <option value="blue">🔵 Blue</option>
+              <option value="purple">🟣 Purple</option>
+              <option value="orange">🟠 Orange</option>
+            </select>
+          </div>
         </div>
 
         {showCountryList && (

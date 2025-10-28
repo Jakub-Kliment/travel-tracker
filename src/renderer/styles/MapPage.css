@@ -199,6 +199,55 @@
   font-size: 1.75rem;
 }
 
+/* Map controls */
+.map-controls {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.projection-selector,
+.color-scheme-selector {
+  display: flex;
+}
+
+.projection-dropdown,
+.color-dropdown {
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.projection-dropdown:hover,
+.color-dropdown:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: #48bb78;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.projection-dropdown:focus,
+.color-dropdown:focus {
+  border-color: #48bb78;
+  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+}
+
+.projection-dropdown option,
+.color-dropdown option {
+  background: #2d3748;
+  color: #e2e8f0;
+  padding: 0.5rem;
+}
+
 /* Map info tip */
 .map-info {
   margin-top: 1rem;
