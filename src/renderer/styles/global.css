@@ -61,3 +61,28 @@ h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: #718096;
 }
+
+/* Flag icon size classes */
+.flag-icon-sm {
+  width: 16px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 2px;
+  margin-right: 6px;
+}
+
+.flag-icon-md {
+  width: 24px;
+  height: 18px;
+  display: inline-block;
+  border-radius: 2px;
+  margin-right: 8px;
+}
+
+.flag-icon-lg {
+  width: 32px;
+  height: 24px;
+  display: inline-block;
+  border-radius: 3px;
+  margin-right: 10px;
+}

@@ -76,6 +76,9 @@
   z-index: 1000;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 @keyframes fadeIn {
@@ -344,6 +347,12 @@
 .country-list-item.visited {
   background: rgba(72, 187, 120, 0.1);
   border-left-color: #48bb78;
+}
+
+.country-info {
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 .country-name {

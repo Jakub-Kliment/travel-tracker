@@ -6,6 +6,7 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import { Country } from '../../shared/types';
+import FlagIcon from '../components/FlagIcon';
 import '../styles/MapPage.css';
 
 // Using Natural Earth 50m for better coverage - includes more small countries
@@ -64,7 +65,7 @@ const countryIdToIso: { [key: string]: string } = {
 };
 
 const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
-  const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+  const [hoveredCountry, setHoveredCountry] = useState<{ name: string; code: string } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState<[number, number]>([0, 20]);
   const [showCountryList, setShowCountryList] = useState(false);
@@ -261,7 +262,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                       }}
                       onMouseEnter={() => {
                         if (country) {
-                          setHoveredCountry(country.name);
+                          setHoveredCountry({ name: country.name, code: country.code });
                         }
                       }}
                       onMouseLeave={() => {
@@ -278,7 +279,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
 
         {hoveredCountry && (
           <div className="country-tooltip">
-            {hoveredCountry}
+            <FlagIcon countryCode={hoveredCountry.code} size="small" />
+            {hoveredCountry.name}
           </div>
         )}
 
@@ -316,7 +318,10 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                   className={`country-list-item ${country.visited ? 'visited' : ''}`}
                   onClick={(e) => handleCountryListClick(country, e)}
                 >
-                  <span className="country-name">{country.name}</span>
+                  <div className="country-info">
+                    <FlagIcon countryCode={country.code} size="small" />
+                    <span className="country-name">{country.name}</span>
+                  </div>
                   <span className="country-status">{country.visited ? '✓' : ''}</span>
                 </div>
               ))}
@@ -340,7 +345,10 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                       className={`country-list-item territory ${territory.visited ? 'visited' : ''}`}
                       onClick={(e) => handleCountryListClick(territory, e)}
                     >
-                      <span className="country-name">{territory.name}</span>
+                      <div className="country-info">
+                        <FlagIcon countryCode={territory.code} size="small" />
+                        <span className="country-name">{territory.name}</span>
+                      </div>
                       <span className="country-status">{territory.visited ? '✓' : ''}</span>
                     </div>
                   ))}

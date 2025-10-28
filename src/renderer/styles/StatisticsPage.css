@@ -157,6 +157,15 @@
 .timeline-countries {
   color: #e2e8f0;
   flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.timeline-country {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
 }
 
 /* Country Lists */
@@ -195,6 +204,12 @@
 .visit-date {
   font-size: 0.875rem;
   color: #a0aec0;
+}
+
+.country-name-with-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
 }
 
 /* Responsive adjustments */

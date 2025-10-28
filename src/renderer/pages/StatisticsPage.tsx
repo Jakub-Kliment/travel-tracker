@@ -15,6 +15,7 @@ import {
 import { Country } from '../../shared/types';
 import { calculateStatistics } from '../utils/statistics';
 import { format, parseISO } from 'date-fns';
+import FlagIcon from '../components/FlagIcon';
 import '../styles/StatisticsPage.css';
 
 interface StatisticsPageProps {
@@ -141,7 +142,16 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                     {format(parseISO(entry.date), 'MMM d, yyyy')}
                   </div>
                   <div className="timeline-countries">
-                    {entry.countries.join(', ')}
+                    {entry.countryCodes ? (
+                      entry.countries.map((name, idx) => (
+                        <span key={entry.countryCodes![idx]} className="timeline-country">
+                          <FlagIcon countryCode={entry.countryCodes![idx]} size="small" />
+                          {name}
+                        </span>
+                      ))
+                    ) : (
+                      entry.countries.join(', ')
+                    )}
                   </div>
                 </div>
               ))}
@@ -162,7 +172,10 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
               })
               .map((country) => (
                 <div key={country.code} className="country-item visited">
-                  <span>{country.name}</span>
+                  <span className="country-name-with-flag">
+                    <FlagIcon countryCode={country.code} size="small" />
+                    {country.name}
+                  </span>
                   {country.visitDate && (
                     <span className="visit-date">
                       {format(parseISO(country.visitDate), 'MMM yyyy')}
@@ -181,6 +194,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
               .sort((a, b) => a.name.localeCompare(b.name))
               .map((country) => (
                 <div key={country.code} className="country-item not-visited">
+                  <FlagIcon countryCode={country.code} size="small" />
                   {country.name}
                 </div>
               ))}

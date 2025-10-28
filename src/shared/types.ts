@@ -30,6 +30,7 @@ export interface ContinentStats {
 export interface TimelineEntry {
   date: string;
   countries: string[];
+  countryCodes?: string[]; // Optional for backward compatibility
 }
 
 // Electron API types for TypeScript

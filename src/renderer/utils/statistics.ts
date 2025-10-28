@@ -29,15 +29,17 @@ export const calculateStatistics = (countries: Country[]): Statistics => {
   const visitedWithDates = visitedCountries.filter((c) => c.visitDate);
 
   // Group by date
-  const dateMap = new Map<string, string[]>();
+  const dateMap = new Map<string, { names: string[]; codes: string[] }>();
   visitedWithDates.forEach((country) => {
     if (country.visitDate) {
       try {
         const date = format(parseISO(country.visitDate), 'yyyy-MM-dd');
         if (!dateMap.has(date)) {
-          dateMap.set(date, []);
+          dateMap.set(date, { names: [], codes: [] });
         }
-        dateMap.get(date)!.push(country.name);
+        const entry = dateMap.get(date)!;
+        entry.names.push(country.name);
+        entry.codes.push(country.code);
       } catch (error) {
         console.error('Invalid date format:', country.visitDate);
       }
@@ -45,8 +47,8 @@ export const calculateStatistics = (countries: Country[]): Statistics => {
   });
 
   // Convert to timeline entries and sort by date (most recent first)
-  dateMap.forEach((countryNames, date) => {
-    timeline.push({ date, countries: countryNames });
+  dateMap.forEach((data, date) => {
+    timeline.push({ date, countries: data.names, countryCodes: data.codes });
   });
   timeline.sort((a, b) => b.date.localeCompare(a.date));
 

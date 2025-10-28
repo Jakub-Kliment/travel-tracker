@@ -3,6 +3,7 @@ import MapPage from './pages/MapPage';
 import StatisticsPage from './pages/StatisticsPage';
 import { TravelData } from '../shared/types';
 import { getAllCountries } from './utils/countries';
+import 'flag-icons/css/flag-icons.min.css';
 import './styles/App.css';
 
 type Page = 'map' | 'statistics';
