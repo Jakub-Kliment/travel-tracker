@@ -1,6 +1,6 @@
 import { Country, Statistics, ContinentStats, TimelineEntry } from '../../shared/types';
 import { isCountryVisited, getMostRecentVisitDate } from '../../shared/migration';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 
 export const calculateStatistics = (countries: Country[]): Statistics => {
   const totalCountries = countries.length;
@@ -52,11 +52,35 @@ export const calculateStatistics = (countries: Country[]): Statistics => {
   });
   timeline.sort((a, b) => b.date.localeCompare(a.date));
 
+  // Calculate duration statistics
+  let totalDaysTraveled = 0;
+  let totalTrips = 0;
+
+  visitedCountries.forEach((country) => {
+    country.visits.forEach((visit) => {
+      totalTrips++;
+      try {
+        const startDate = parseISO(visit.startDate);
+        const endDate = visit.endDate ? parseISO(visit.endDate) : startDate;
+        const days = differenceInDays(endDate, startDate) + 1; // Include both start and end day
+        totalDaysTraveled += days;
+      } catch (error) {
+        // If dates are invalid, count as 1 day
+        totalDaysTraveled += 1;
+      }
+    });
+  });
+
+  const averageTripLength = totalTrips > 0 ? totalDaysTraveled / totalTrips : 0;
+
   return {
     totalCountries,
     visitedCount,
     visitedPercentage,
     continentStats,
     timeline,
+    totalDaysTraveled,
+    averageTripLength,
+    totalTrips,
   };
 };

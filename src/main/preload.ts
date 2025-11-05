@@ -7,4 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadData: () => ipcRenderer.invoke('load-data'),
   autoSaveData: (data: any) => ipcRenderer.invoke('auto-save-data', data),
   autoLoadData: () => ipcRenderer.invoke('auto-load-data'),
+  mapReady: () => ipcRenderer.send('map-ready'),
+  selectPhotos: () => ipcRenderer.invoke('select-photos'),
+  getPhotoPath: (relativePath: string) => ipcRenderer.invoke('get-photo-path', relativePath),
+  deletePhoto: (relativePath: string) => ipcRenderer.invoke('delete-photo', relativePath),
 });

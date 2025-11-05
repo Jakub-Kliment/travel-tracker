@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -11,12 +11,14 @@ import { isCountryVisited } from '../../shared/migration';
 import FlagIcon from '../components/FlagIcon';
 import '../styles/MapPage.css';
 
-// Using Natural Earth 50m for better coverage - includes more small countries
+// Using CDN for map data to keep app size small
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
 
 interface MapPageProps {
   countries: Country[];
   onToggleCountry: (countryCode: string, visitData?: Partial<Visit> | 'unmark') => void;
+  onUpdateVisit: (countryCode: string, visitIndex: number, visitData: Partial<Visit>) => void;
+  onDeleteVisit: (countryCode: string, visitIndex: number) => void;
 }
 
 // Mapping from numeric country IDs (UN M49) to ISO 3-letter codes
@@ -121,7 +123,7 @@ const visitTypeColors = {
   },
 };
 
-const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
+const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateVisit, onDeleteVisit }) => {
   const [hoveredCountry, setHoveredCountry] = useState<{ name: string; code: string } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState<[number, number]>([0, -7]); // Centered slightly south of equator
@@ -129,15 +131,36 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showTerritories, setShowTerritories] = useState(true);
   const [editingCountry, setEditingCountry] = useState<Country | null>(null);
+  const [editingVisitIndex, setEditingVisitIndex] = useState<number | null>(null);
+  const [isAddingNewVisit, setIsAddingNewVisit] = useState(false);
   const [newVisitDate, setNewVisitDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
   const [visitType, setVisitType] = useState<'business' | 'leisure' | 'transit' | ''>('');
   const [visitNotes, setVisitNotes] = useState('');
   const [visitRating, setVisitRating] = useState<number>(0);
-  const [showTip, setShowTip] = useState(true);
+  const [visitPhotos, setVisitPhotos] = useState<string[]>([]);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const [projection, setProjection] = useState<ProjectionType>('geoNaturalEarth1');
   const [colorScheme, setColorScheme] = useState<ColorScheme>('green');
   const [colorByVisitType, setColorByVisitType] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  // Signal to main process when map is ready
+  useEffect(() => {
+    if (mapReady && window.electronAPI) {
+      window.electronAPI.mapReady();
+    }
+  }, [mapReady]);
+
+  // Update editingCountry when countries array changes
+  useEffect(() => {
+    if (editingCountry) {
+      const updatedCountry = countries.find(c => c.code === editingCountry.code);
+      if (updatedCountry) {
+        setEditingCountry(updatedCountry);
+      }
+    }
+  }, [countries]);
 
   const getCountryByGeo = (geo: any): Country | undefined => {
     let isoCode = countryIdToIso[geo.id];
@@ -178,25 +201,17 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
     if (isoCode) {
       const country = countries.find((c) => c.code === isoCode);
       if (country) {
-        // Always show modal to add/edit visit details
+        // Show modal with all visits
         setEditingCountry(country);
-
-        if (isCountryVisited(country)) {
-          // Load existing visit data
-          const latestVisit = country.visits[0];
-          setNewVisitDate(latestVisit.startDate);
-          setNewEndDate(latestVisit.endDate || '');
-          setVisitType(latestVisit.visitType || '');
-          setVisitNotes(latestVisit.notes || '');
-          setVisitRating(latestVisit.rating || 0);
-        } else {
-          // New visit - set defaults
-          setNewVisitDate(new Date().toISOString().split('T')[0]);
-          setNewEndDate('');
-          setVisitType('');
-          setVisitNotes('');
-          setVisitRating(0);
-        }
+        setEditingVisitIndex(null);
+        setIsAddingNewVisit(false);
+        // Clear form
+        setNewVisitDate('');
+        setNewEndDate('');
+        setVisitType('');
+        setVisitNotes('');
+        setVisitRating(0);
+        setVisitPhotos([]);
       }
     }
   };
@@ -257,60 +272,137 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
 
   const handleCountryListClick = (country: Country, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Always show modal for adding/editing visit details
+    // Show modal with all visits
     setEditingCountry(country);
-
-    if (isCountryVisited(country)) {
-      // Load existing visit data
-      const latestVisit = country.visits[0];
-      setNewVisitDate(latestVisit.startDate);
-      setNewEndDate(latestVisit.endDate || '');
-      setVisitType(latestVisit.visitType || '');
-      setVisitNotes(latestVisit.notes || '');
-      setVisitRating(latestVisit.rating || 0);
-    } else {
-      // New visit - set defaults
-      setNewVisitDate(new Date().toISOString().split('T')[0]);
-      setNewEndDate('');
-      setVisitType('');
-      setVisitNotes('');
-      setVisitRating(0);
-    }
-  };
-
-  const handleSaveDate = () => {
-    if (editingCountry && newVisitDate) {
-      // Validate dates
-      if (newEndDate && newEndDate < newVisitDate) {
-        alert('End date cannot be before start date!');
-        return;
-      }
-
-      // Save all visit data
-      onToggleCountry(editingCountry.code, {
-        startDate: newVisitDate,
-        endDate: newEndDate || undefined,
-        visitType: visitType || undefined,
-        notes: visitNotes || undefined,
-        rating: visitRating || undefined,
-      });
-      handleCancelEdit();
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingCountry(null);
+    setEditingVisitIndex(null);
+    setIsAddingNewVisit(false);
+    // Clear form
     setNewVisitDate('');
     setNewEndDate('');
     setVisitType('');
     setVisitNotes('');
     setVisitRating(0);
+    setVisitPhotos([]);
   };
 
-  const handleUnmarkVisit = () => {
-    if (editingCountry) {
+  const handleStartAddVisit = () => {
+    setIsAddingNewVisit(true);
+    setEditingVisitIndex(null);
+    setNewVisitDate(new Date().toISOString().split('T')[0]);
+    setNewEndDate('');
+    setVisitType('');
+    setVisitNotes('');
+    setVisitRating(0);
+    setVisitPhotos([]);
+  };
+
+  const handleStartEditVisit = (visitIndex: number) => {
+    if (!editingCountry) return;
+    const visit = editingCountry.visits[visitIndex];
+    setEditingVisitIndex(visitIndex);
+    setIsAddingNewVisit(false);
+    setNewVisitDate(visit.startDate);
+    setNewEndDate(visit.endDate || '');
+    setVisitType(visit.visitType || '');
+    setVisitNotes(visit.notes || '');
+    setVisitRating(visit.rating || 0);
+    setVisitPhotos(visit.photos || []);
+  };
+
+  const handleSaveVisit = () => {
+    if (!editingCountry || !newVisitDate) return;
+
+    // Validate dates
+    if (newEndDate && newEndDate < newVisitDate) {
+      alert('End date cannot be before start date!');
+      return;
+    }
+
+    const visitData: Partial<Visit> = {
+      startDate: newVisitDate,
+      endDate: newEndDate || undefined,
+      visitType: visitType || undefined,
+      notes: visitNotes || undefined,
+      rating: visitRating || undefined,
+      photos: visitPhotos.length > 0 ? visitPhotos : undefined,
+    };
+
+    if (isAddingNewVisit) {
+      // Add new visit (useEffect will update editingCountry automatically)
+      onToggleCountry(editingCountry.code, visitData);
+    } else if (editingVisitIndex !== null) {
+      // Update existing visit (useEffect will update editingCountry automatically)
+      onUpdateVisit(editingCountry.code, editingVisitIndex, visitData);
+    }
+
+    // Reset form
+    setIsAddingNewVisit(false);
+    setEditingVisitIndex(null);
+    setNewVisitDate('');
+    setNewEndDate('');
+    setVisitType('');
+    setVisitNotes('');
+    setVisitRating(0);
+    setVisitPhotos([]);
+  };
+
+  const handleCancelEditVisit = () => {
+    setIsAddingNewVisit(false);
+    setEditingVisitIndex(null);
+    setNewVisitDate('');
+    setNewEndDate('');
+    setVisitType('');
+    setVisitNotes('');
+    setVisitRating(0);
+    setVisitPhotos([]);
+  };
+
+  const handleDeleteVisit = (visitIndex: number) => {
+    if (!editingCountry) return;
+    if (confirm('Are you sure you want to delete this visit?')) {
+      onDeleteVisit(editingCountry.code, visitIndex);
+      handleCancelEditVisit();
+    }
+  };
+
+  const handleCloseModal = () => {
+    setEditingCountry(null);
+    setEditingVisitIndex(null);
+    setIsAddingNewVisit(false);
+    setNewVisitDate('');
+    setNewEndDate('');
+    setVisitType('');
+    setVisitNotes('');
+    setVisitRating(0);
+    setVisitPhotos([]);
+    setViewingPhoto(null);
+  };
+
+  const handleAddPhotos = async () => {
+    try {
+      const result = await window.electronAPI.selectPhotos();
+      if (result.success && result.photos) {
+        setVisitPhotos([...visitPhotos, ...result.photos]);
+      }
+    } catch (error) {
+      console.error('Failed to add photos:', error);
+      alert('Failed to add photos');
+    }
+  };
+
+  const handleRemovePhoto = async (photoPath: string) => {
+    try {
+      await window.electronAPI.deletePhoto(photoPath);
+      setVisitPhotos(visitPhotos.filter(p => p !== photoPath));
+    } catch (error) {
+      console.error('Failed to remove photo:', error);
+    }
+  };
+
+  const handleUnmarkAll = () => {
+    if (editingCountry && confirm('Are you sure you want to remove all visits to this country?')) {
       onToggleCountry(editingCountry.code, 'unmark');
-      handleCancelEdit();
+      handleCloseModal();
     }
   };
 
@@ -399,8 +491,13 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
           >
             <Sphere id="ocean" stroke="#2c5282" strokeWidth={0.5} fill="#1e3a5f" />
             <Geographies geography={geoUrl}>
-              {({ geographies }: { geographies: any[] }) =>
-                geographies.map((geo: any) => {
+              {({ geographies }: { geographies: any[] }) => {
+                // Signal that map data is loaded
+                if (!mapReady) {
+                  setMapReady(true);
+                }
+
+                return geographies.map((geo: any) => {
                   const country = getCountryByGeo(geo);
                   return (
                     <Geography
@@ -440,8 +537,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                       onClick={() => handleCountryClick(geo)}
                     />
                   );
-                })
-              }
+                });
+              }}
             </Geographies>
           </ZoomableGroup>
         </ComposableMap>
@@ -567,167 +664,273 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
         )}
       </div>
 
-      {showTip && (
-        <div className="map-info">
-          <button
-            onClick={() => setShowTip(false)}
-            className="close-tip-btn"
-            title="Dismiss tip"
-          >
-            ×
-          </button>
-          <p>💡 <strong>Tip:</strong> Use scroll wheel to zoom, drag to pan, or use the + / - buttons. Can't find a small country? Click the ☰ button to access the full country list!</p>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
-            Note: Disputed territories (Greenland, Western Sahara, Somaliland, Northern Cyprus, Antarctica) are available as optional trackable areas in the country list.
-          </p>
+      {editingCountry && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content visit-modal multi-visit-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{editingCountry.name}</h3>
+
+            {/* Show all visits in cards */}
+            {!isAddingNewVisit && editingVisitIndex === null && (
+              <div className="visits-container">
+                {editingCountry.visits.length === 0 ? (
+                  <p className="no-visits-message">No visits recorded yet. Click "Add Visit" to add your first visit!</p>
+                ) : (
+                  <>
+                    {editingCountry.visits.map((visit, index) => (
+                      <div key={index} className="visit-card">
+                        <div className="visit-card-header">
+                          <span className="visit-date">
+                            {new Date(visit.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            {visit.endDate && ` - ${new Date(visit.endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`}
+                          </span>
+                          <div className="visit-card-actions">
+                            <button onClick={() => handleStartEditVisit(index)} className="btn-icon" title="Edit">
+                              ✏️
+                            </button>
+                            <button onClick={() => handleDeleteVisit(index)} className="btn-icon" title="Delete">
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                        {visit.visitType && (
+                          <span className={`visit-type-badge ${visit.visitType}`}>
+                            {visit.visitType}
+                          </span>
+                        )}
+                        {visit.rating && (
+                          <div className="visit-rating">
+                            {Array.from({ length: 5 }, (_, i) => {
+                              const rating = visit.rating || 0;
+                              const starIndex = i + 1;
+                              const wholeStars = Math.floor(rating);
+                              const decimal = rating - wholeStars;
+
+                              let fillPercent = 0;
+                              if (starIndex <= wholeStars) {
+                                fillPercent = 100;
+                              } else if (starIndex === wholeStars + 1) {
+                                fillPercent = (decimal * 100) / 2;
+                              }
+
+                              return (
+                                <span key={i} className="star-container-display-small">
+                                  <span className="star-bg">☆</span>
+                                  {fillPercent > 0 && (
+                                    <span className="star-fill" style={{ width: `${fillPercent}%` }}>★</span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                            <span className="rating-number-small">{visit.rating.toFixed(1)}</span>
+                          </div>
+                        )}
+                        {visit.notes && (
+                          <p className="visit-notes">{visit.notes}</p>
+                        )}
+                        {visit.photos && visit.photos.length > 0 && (
+                          <div className="visit-photos-preview">
+                            {visit.photos.map((photo, photoIndex) => (
+                              <div
+                                key={photoIndex}
+                                className="photo-thumbnail"
+                                onClick={() => setViewingPhoto(photo)}
+                              >
+                                <img src={`atom://${photo}`} alt={`Visit photo ${photoIndex + 1}`} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Edit/Add form */}
+            {(isAddingNewVisit || editingVisitIndex !== null) && (
+              <div className="visit-edit-form">
+                <h4>{isAddingNewVisit ? 'Add New Visit' : 'Edit Visit'}</h4>
+
+                <div className="form-grid">
+                  <div className="form-field">
+                    <label>Start Date *</label>
+                    <input
+                      type="date"
+                      value={newVisitDate}
+                      onChange={(e) => setNewVisitDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>End Date (optional)</label>
+                    <input
+                      type="date"
+                      value={newEndDate}
+                      onChange={(e) => setNewEndDate(e.target.value)}
+                      min={newVisitDate}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Visit Type</label>
+                    <select value={visitType} onChange={(e) => setVisitType(e.target.value as any)}>
+                      <option value="">Other</option>
+                      <option value="leisure">Leisure</option>
+                      <option value="business">Business</option>
+                      <option value="transit">Transit</option>
+                    </select>
+                  </div>
+
+                  <div className="form-field">
+                    <label>Rating</label>
+                    <div className="rating-input-container">
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        value={visitRating || ''}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (!isNaN(value) && value >= 0 && value <= 5) {
+                            setVisitRating(Math.round(value * 10) / 10);
+                          } else if (e.target.value === '') {
+                            setVisitRating(0);
+                          }
+                        }}
+                        placeholder="0.0"
+                        className="rating-input"
+                      />
+                      <div className="star-rating-display">
+                        {[1, 2, 3, 4, 5].map((starIndex) => {
+                          const wholeStars = Math.floor(visitRating);
+                          const decimal = visitRating - wholeStars;
+
+                          let fillPercent = 0;
+                          if (starIndex <= wholeStars) {
+                            fillPercent = 100;
+                          } else if (starIndex === wholeStars + 1) {
+                            fillPercent = (decimal * 100) / 2;
+                          }
+
+                          return (
+                            <span
+                              key={starIndex}
+                              className="star-container"
+                              onClick={(e) => {
+                                e.stopPropagation();
+
+                                // Get the actual rendered star character position
+                                const starBg = e.currentTarget.querySelector('.star-bg') as HTMLElement;
+                                if (!starBg) return;
+
+                                const starRect = starBg.getBoundingClientRect();
+                                const clickX = e.clientX - starRect.left;
+                                const starWidth = starRect.width;
+
+                                // Calculate position within the actual star (0.0 to 1.0)
+                                const clickPercent = Math.max(0, Math.min(1, clickX / starWidth));
+
+                                // Round to nearest 0.1
+                                const baseRating = (starIndex - 1);
+                                const decimal = Math.round(clickPercent * 10) / 10;
+                                const newRating = baseRating + decimal;
+
+                                setVisitRating(Math.min(5, Math.max(0, newRating)));
+                              }}
+                              title={`Click for rating ${starIndex - 1}.0 to ${starIndex}.0`}
+                            >
+                              <span className="star-bg">☆</span>
+                              {fillPercent > 0 && (
+                                <span className="star-fill" style={{ width: `${fillPercent}%` }}>★</span>
+                              )}
+                            </span>
+                          );
+                        })}
+                        {visitRating > 0 && (
+                          <button className="clear-rating" onClick={() => setVisitRating(0)} title="Clear rating">×</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-field" style={{ marginTop: '1rem' }}>
+                  <label>Notes & Memories</label>
+                  <textarea
+                    value={visitNotes}
+                    onChange={(e) => setVisitNotes(e.target.value)}
+                    placeholder="Add your memories, highlights, or notes about this visit..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Photos */}
+                <div className="form-field" style={{ marginTop: '1rem' }}>
+                  <label>Photos</label>
+                  <div className="photos-manager">
+                    {visitPhotos.length > 0 && (
+                      <div className="photos-grid">
+                        {visitPhotos.map((photo, index) => (
+                          <div key={index} className="photo-item">
+                            <img src={`atom://${photo}`} alt={`Photo ${index + 1}`} />
+                            <button
+                              className="remove-photo-btn"
+                              onClick={() => handleRemovePhoto(photo)}
+                              title="Remove photo"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <button type="button" onClick={handleAddPhotos} className="btn-secondary add-photos-btn">
+                      📷 Add Photos
+                    </button>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button onClick={handleCancelEditVisit} className="btn-secondary">Cancel</button>
+                  <button onClick={handleSaveVisit} className="btn-primary">Save Visit</button>
+                </div>
+              </div>
+            )}
+
+            <div className="modal-actions">
+              {!isAddingNewVisit && editingVisitIndex === null && (
+                <>
+                  <button onClick={handleStartAddVisit} className="btn-primary">
+                    Add Visit
+                  </button>
+                  {editingCountry.visits.length > 0 && (
+                    <button onClick={handleUnmarkAll} className="btn-secondary" style={{ marginLeft: 'auto' }}>
+                      Remove All Visits
+                    </button>
+                  )}
+                </>
+              )}
+              <button onClick={handleCloseModal} className="btn-secondary">
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {editingCountry && (
-        <div className="modal-overlay" onClick={handleCancelEdit}>
-          <div className="modal-content visit-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Edit Visit for {editingCountry.name}</h3>
-
-            <div className="form-grid">
-              {/* Start Date */}
-              <div className="form-field">
-                <label>Start Date *</label>
-                <input
-                  type="date"
-                  value={newVisitDate}
-                  onChange={(e) => setNewVisitDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-
-              {/* End Date */}
-              <div className="form-field">
-                <label>End Date (optional)</label>
-                <input
-                  type="date"
-                  value={newEndDate}
-                  onChange={(e) => setNewEndDate(e.target.value)}
-                  min={newVisitDate}
-                  max={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-
-              {/* Visit Type */}
-              <div className="form-field">
-                <label>Visit Type</label>
-                <select value={visitType} onChange={(e) => setVisitType(e.target.value as any)}>
-                  <option value="">Other</option>
-                  <option value="leisure">Leisure</option>
-                  <option value="business">Business</option>
-                  <option value="transit">Transit</option>
-                </select>
-              </div>
-
-              {/* Rating */}
-              <div className="form-field">
-                <label>Rating</label>
-                <div className="rating-input-container">
-                  <input
-                    type="number"
-                    min="0"
-                    max="5"
-                    step="0.1"
-                    value={visitRating || ''}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (!isNaN(value) && value >= 0 && value <= 5) {
-                        setVisitRating(Math.round(value * 10) / 10); // Round to 1 decimal
-                      } else if (e.target.value === '') {
-                        setVisitRating(0);
-                      }
-                    }}
-                    placeholder="0.0"
-                    className="rating-input"
-                  />
-                  <div className="star-rating-display">
-                    {[1, 2, 3, 4, 5].map((starIndex) => {
-                      // Calculate what portion of this star should be filled
-                      // For rating 3.1: stars 1,2,3 full (100%), star 4 is 1/10 = 10%, star 5 is 0%
-                      const wholeStars = Math.floor(visitRating);
-                      const decimal = visitRating - wholeStars; // Get decimal part (0.0-0.9)
-
-                      let fillPercent = 0;
-                      if (starIndex <= wholeStars) {
-                        fillPercent = 100; // Full star
-                      } else if (starIndex === wholeStars + 1) {
-                        // Star character renders non-linearly, scale down by half
-                        fillPercent = (decimal * 100) / 2;
-                      }
-
-                      return (
-                        <span
-                          key={starIndex}
-                          className="star-container"
-                          onClick={(e) => {
-                            // Calculate click position within the star
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const clickX = e.clientX - rect.left;
-                            const starWidth = rect.width;
-                            const clickPercent = clickX / starWidth;
-
-                            // Convert to decimal (0.0 to 0.9)
-                            const decimal = Math.floor(clickPercent * 10) / 10;
-                            const newRating = (starIndex - 1) + decimal;
-                            setVisitRating(Math.min(5, newRating));
-                          }}
-                          title={`Click position for ${starIndex - 1}.0 to ${starIndex - 1}.9`}
-                        >
-                          <span className="star-bg">☆</span>
-                          {fillPercent > 0 && (
-                            <span
-                              className="star-fill"
-                              style={{ width: `${fillPercent}%` }}
-                            >
-                              ★
-                            </span>
-                          )}
-                        </span>
-                      );
-                    })}
-                    {visitRating > 0 && (
-                      <button
-                        className="clear-rating"
-                        onClick={() => setVisitRating(0)}
-                        title="Clear rating"
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="form-field" style={{ marginTop: '1rem' }}>
-              <label>Notes & Memories</label>
-              <textarea
-                value={visitNotes}
-                onChange={(e) => setVisitNotes(e.target.value)}
-                placeholder="Add your memories, highlights, or notes about this visit..."
-                rows={3}
-              />
-            </div>
-
-            <div className="modal-actions">
-              {isCountryVisited(editingCountry) && (
-                <button onClick={handleUnmarkVisit} className="btn-secondary" style={{ marginRight: 'auto' }}>
-                  Unmark as Visited
-                </button>
-              )}
-              <button onClick={handleCancelEdit} className="btn-secondary">
-                Cancel
-              </button>
-              <button onClick={handleSaveDate} className="btn-primary">
-                Save
-              </button>
-            </div>
+      {/* Photo Viewer Modal */}
+      {viewingPhoto && (
+        <div className="modal-overlay photo-viewer-overlay" onClick={() => setViewingPhoto(null)}>
+          <div className="photo-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-photo-viewer" onClick={() => setViewingPhoto(null)}>
+              ×
+            </button>
+            <img src={`atom://${viewingPhoto}`} alt="Full size" />
           </div>
         </div>
       )}

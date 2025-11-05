@@ -81,6 +81,12 @@
   color: #48bb78;
 }
 
+.stat-meta {
+  font-size: 0.875rem;
+  color: #a0aec0;
+  margin-top: 0.5rem;
+}
+
 /* Continent List */
 .continent-list {
   display: flex;
@@ -482,4 +488,111 @@
   display: flex;
   align-items: center;
   gap: 0.15rem;
+}
+
+/* Multiple Visits Display */
+.multi-visit-modal-stats {
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.all-visits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.visit-detail-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.visit-detail-card h4 {
+  color: #48bb78;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Photos in Statistics */
+.visit-photos-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.photo-thumbnail {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.photo-thumbnail:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.photo-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Photo Viewer Modal */
+.photo-viewer-overlay {
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.95);
+}
+
+.photo-viewer-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-viewer-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.close-photo-viewer {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  transition: all 0.2s;
+  z-index: 1;
+}
+
+.close-photo-viewer:hover {
+  background: rgba(220, 38, 38, 0.9);
+  border-color: rgba(220, 38, 38, 1);
+  transform: scale(1.1);
 }

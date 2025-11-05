@@ -61,27 +61,11 @@ const App: React.FC = () => {
     setTravelData((prevData) => {
       const updatedCountries = prevData.countries.map((country) => {
         if (country.code === countryCode) {
-          const isVisited = country.visits.length > 0;
-
           if (visitData === 'unmark') {
             // Remove all visits (unmark)
             return {
               ...country,
               visits: [],
-            };
-          } else if (isVisited && visitData) {
-            // Update existing visit (replace the most recent one with new data)
-            const newVisit: Visit = {
-              startDate: visitData.startDate || country.visits[0].startDate,
-              endDate: visitData.endDate,
-              visitType: visitData.visitType,
-              notes: visitData.notes,
-              rating: visitData.rating,
-              photos: visitData.photos,
-            };
-            return {
-              ...country,
-              visits: [newVisit],  // Replace with updated visit
             };
           } else {
             // Add a new visit
@@ -95,9 +79,55 @@ const App: React.FC = () => {
             };
             return {
               ...country,
-              visits: [newVisit],
+              visits: [...country.visits, newVisit],
             };
           }
+        }
+        return country;
+      });
+
+      return {
+        version: 2,
+        countries: updatedCountries,
+        lastUpdated: new Date().toISOString(),
+      };
+    });
+  };
+
+  const updateVisit = (countryCode: string, visitIndex: number, visitData: Partial<Visit>) => {
+    setTravelData((prevData) => {
+      const updatedCountries = prevData.countries.map((country) => {
+        if (country.code === countryCode) {
+          const updatedVisits = [...country.visits];
+          updatedVisits[visitIndex] = {
+            ...updatedVisits[visitIndex],
+            ...visitData,
+          };
+          return {
+            ...country,
+            visits: updatedVisits,
+          };
+        }
+        return country;
+      });
+
+      return {
+        version: 2,
+        countries: updatedCountries,
+        lastUpdated: new Date().toISOString(),
+      };
+    });
+  };
+
+  const deleteVisit = (countryCode: string, visitIndex: number) => {
+    setTravelData((prevData) => {
+      const updatedCountries = prevData.countries.map((country) => {
+        if (country.code === countryCode) {
+          const updatedVisits = country.visits.filter((_, index) => index !== visitIndex);
+          return {
+            ...country,
+            visits: updatedVisits,
+          };
         }
         return country;
       });
@@ -172,6 +202,8 @@ const App: React.FC = () => {
           <MapPage
             countries={travelData.countries}
             onToggleCountry={toggleCountryVisited}
+            onUpdateVisit={updateVisit}
+            onDeleteVisit={deleteVisit}
           />
         ) : (
           <StatisticsPage countries={travelData.countries} />

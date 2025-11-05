@@ -15,7 +15,7 @@ import {
 import { Country } from '../../shared/types';
 import { calculateStatistics } from '../utils/statistics';
 import { isCountryVisited, getMostRecentVisitDate } from '../../shared/migration';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 import FlagIcon from '../components/FlagIcon';
 import '../styles/StatisticsPage.css';
 
@@ -28,6 +28,7 @@ const COLORS = ['#48bb78', '#4299e1', '#ed8936', '#9f7aea', '#f56565', '#38b2ac'
 const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
   const stats = calculateStatistics(countries);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
   const visitedCountries = countries.filter((c) => isCountryVisited(c));
   const notVisitedCountries = countries.filter((c) => !isCountryVisited(c));
@@ -58,6 +59,20 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
             ></div>
           </div>
           <p className="stat-percentage">{stats.visitedPercentage.toFixed(1)}% Complete</p>
+        </div>
+
+        {/* Travel Duration Stats */}
+        <div className="stat-card">
+          <h3>Total Days Traveled</h3>
+          <div className="stat-value">{stats.totalDaysTraveled}</div>
+          <div className="stat-label">Days on the Road</div>
+        </div>
+
+        <div className="stat-card">
+          <h3>Average Trip Length</h3>
+          <div className="stat-value">{stats.averageTripLength.toFixed(1)}</div>
+          <div className="stat-label">Days per Trip</div>
+          <p className="stat-meta">{stats.totalTrips} total trips</p>
         </div>
 
         {/* Pie Chart */}
@@ -289,80 +304,131 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
       {/* Visit Details Modal */}
       {selectedCountry && isCountryVisited(selectedCountry) && (
         <div className="modal-overlay" onClick={() => setSelectedCountry(null)}>
-          <div className="modal-content visit-details-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content visit-details-modal multi-visit-modal-stats" onClick={(e) => e.stopPropagation()}>
             <h3>{selectedCountry.name}</h3>
 
-            {selectedCountry.visits[0] && (
-              <div className="visit-details">
-                <div className="detail-row">
-                  <span className="detail-label">Dates:</span>
-                  <span className="detail-value">
-                    {format(parseISO(selectedCountry.visits[0].startDate), 'MMM d, yyyy')}
-                    {selectedCountry.visits[0].endDate && (
-                      <> - {format(parseISO(selectedCountry.visits[0].endDate), 'MMM d, yyyy')}</>
+            <div className="all-visits-list">
+              {selectedCountry.visits.map((visit, index) => (
+                <div key={index} className="visit-detail-card">
+                  <h4>Visit #{index + 1}</h4>
+
+                  <div className="visit-details">
+                    <div className="detail-row">
+                      <span className="detail-label">Dates:</span>
+                      <span className="detail-value">
+                        {format(parseISO(visit.startDate), 'MMM d, yyyy')}
+                        {visit.endDate && (
+                          <> - {format(parseISO(visit.endDate), 'MMM d, yyyy')}</>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="detail-row">
+                      <span className="detail-label">Duration:</span>
+                      <span className="detail-value">
+                        {(() => {
+                          try {
+                            const startDate = parseISO(visit.startDate);
+                            const endDate = visit.endDate
+                              ? parseISO(visit.endDate)
+                              : startDate;
+                            const days = differenceInDays(endDate, startDate) + 1;
+                            return `${days} ${days === 1 ? 'day' : 'days'}`;
+                          } catch {
+                            return '1 day';
+                          }
+                        })()}
+                      </span>
+                    </div>
+
+                    {visit.visitType && (
+                      <div className="detail-row">
+                        <span className="detail-label">Type:</span>
+                        <span className="detail-value capitalize">{visit.visitType}</span>
+                      </div>
                     )}
-                  </span>
-                </div>
 
-                {selectedCountry.visits[0].visitType && (
-                  <div className="detail-row">
-                    <span className="detail-label">Type:</span>
-                    <span className="detail-value capitalize">{selectedCountry.visits[0].visitType}</span>
-                  </div>
-                )}
+                    {visit.rating && (
+                      <div className="detail-row">
+                        <span className="detail-label">Rating:</span>
+                        <span className="detail-value rating-stars">
+                          {Array.from({ length: 5 }, (_, i) => {
+                            const rating = visit.rating || 0;
+                            const starIndex = i + 1;
+                            const wholeStars = Math.floor(rating);
+                            const decimal = rating - wholeStars;
 
-                {selectedCountry.visits[0].rating && (
-                  <div className="detail-row">
-                    <span className="detail-label">Rating:</span>
-                    <span className="detail-value rating-stars">
-                      {Array.from({ length: 5 }, (_, i) => {
-                        const rating = selectedCountry.visits[0].rating || 0;
-                        const starIndex = i + 1;
-                        // For rating 3.4: stars 1,2,3 full, star 4 is 4/10 = 40%
-                        const wholeStars = Math.floor(rating);
-                        const decimal = rating - wholeStars; // 0.0-0.9
+                            let fillPercent = 0;
+                            if (starIndex <= wholeStars) {
+                              fillPercent = 100;
+                            } else if (starIndex === wholeStars + 1) {
+                              fillPercent = (decimal * 100) / 2;
+                            }
 
-                        let fillPercent = 0;
-                        if (starIndex <= wholeStars) {
-                          fillPercent = 100;
-                        } else if (starIndex === wholeStars + 1) {
-                          // Star character renders non-linearly, scale down by half
-                          fillPercent = (decimal * 100) / 2;
-                        }
-
-                        return (
-                          <span key={i} className="star-container-display">
-                            <span className="star-bg">☆</span>
-                            {fillPercent > 0 && (
-                              <span
-                                className="star-fill"
-                                style={{ width: `${fillPercent}%` }}
-                              >
-                                ★
+                            return (
+                              <span key={i} className="star-container-display">
+                                <span className="star-bg">☆</span>
+                                {fillPercent > 0 && (
+                                  <span
+                                    className="star-fill"
+                                    style={{ width: `${fillPercent}%` }}
+                                  >
+                                    ★
+                                  </span>
+                                )}
                               </span>
-                            )}
-                          </span>
-                        );
-                      })}
-                      <span className="rating-number">({selectedCountry.visits[0].rating.toFixed(1)})</span>
-                    </span>
-                  </div>
-                )}
+                            );
+                          })}
+                          <span className="rating-number">({visit.rating.toFixed(1)})</span>
+                        </span>
+                      </div>
+                    )}
 
-                {selectedCountry.visits[0].notes && (
-                  <div className="detail-row notes-row">
-                    <span className="detail-label">Notes:</span>
-                    <p className="detail-notes">{selectedCountry.visits[0].notes}</p>
+                    {visit.notes && (
+                      <div className="detail-row notes-row">
+                        <span className="detail-label">Notes:</span>
+                        <p className="detail-notes">{visit.notes}</p>
+                      </div>
+                    )}
+
+                    {visit.photos && visit.photos.length > 0 && (
+                      <div className="detail-row">
+                        <span className="detail-label">Photos:</span>
+                        <div className="visit-photos-preview">
+                          {visit.photos.map((photo, photoIndex) => (
+                            <div
+                              key={photoIndex}
+                              className="photo-thumbnail"
+                              onClick={() => setViewingPhoto(photo)}
+                            >
+                              <img src={`atom://${photo}`} alt={`Photo ${photoIndex + 1}`} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
 
             <div className="modal-actions">
               <button onClick={() => setSelectedCountry(null)} className="btn-primary">
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Viewer Modal */}
+      {viewingPhoto && (
+        <div className="modal-overlay photo-viewer-overlay" onClick={() => setViewingPhoto(null)}>
+          <div className="photo-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-photo-viewer" onClick={() => setViewingPhoto(null)}>
+              ×
+            </button>
+            <img src={`atom://${viewingPhoto}`} alt="Full size" />
           </div>
         </div>
       )}

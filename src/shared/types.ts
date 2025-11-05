@@ -42,6 +42,9 @@ export interface Statistics {
   visitedPercentage: number;
   continentStats: ContinentStats[];
   timeline: TimelineEntry[];
+  totalDaysTraveled: number;
+  averageTripLength: number;
+  totalTrips: number;
 }
 
 export interface ContinentStats {
@@ -63,6 +66,10 @@ export interface ElectronAPI {
   loadData: () => Promise<{ success: boolean; data?: TravelData; error?: string }>;
   autoSaveData: (data: TravelData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
   autoLoadData: () => Promise<{ success: boolean; data?: TravelData; error?: string }>;
+  mapReady: () => void;
+  selectPhotos: () => Promise<{ success: boolean; photos?: string[]; error?: string }>;
+  getPhotoPath: (relativePath: string) => Promise<{ success: boolean; path?: string; error?: string }>;
+  deletePhoto: (relativePath: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {

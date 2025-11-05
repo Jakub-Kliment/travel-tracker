@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { migrateLegacyData } from '../shared/migration';
@@ -20,10 +20,10 @@ function createWindow() {
     show: false,  // Don't show until ready
   });
 
-  // Show window when ready to prevent white screen
+  // Don't show immediately - wait for map-ready signal from renderer
   mainWindow.once('ready-to-show', () => {
     mainWindow?.maximize();
-    mainWindow?.show();
+    // Window will be shown when renderer sends 'map-ready' signal
   });
 
   // In development, load from webpack dev server
@@ -44,7 +44,16 @@ function createWindow() {
   });
 }
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+  // Register atom:// protocol to serve local files
+  protocol.registerFileProtocol('atom', (request, callback) => {
+    const url = request.url.substring(7); // Remove 'atom://' prefix
+    const filePath = path.join(app.getPath('userData'), url);
+    callback({ path: filePath });
+  });
+
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -129,6 +138,75 @@ ipcMain.handle('auto-load-data', async () => {
       return { success: true, data };
     }
     return { success: false, error: 'No auto-save file found' };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Show window when map is ready
+ipcMain.on('map-ready', () => {
+  if (mainWindow) {
+    mainWindow.show();
+  }
+});
+
+// Select and copy photos for a visit
+ipcMain.handle('select-photos', async () => {
+  try {
+    const { filePaths } = await dialog.showOpenDialog({
+      title: 'Select Photos',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'] }
+      ]
+    });
+
+    if (filePaths && filePaths.length > 0) {
+      // Create photos directory in userData if it doesn't exist
+      const photosDir = path.join(app.getPath('userData'), 'photos');
+      if (!fs.existsSync(photosDir)) {
+        fs.mkdirSync(photosDir, { recursive: true });
+      }
+
+      // Copy photos and return relative paths
+      const savedPhotos: string[] = [];
+      for (const filePath of filePaths) {
+        const fileName = `${Date.now()}_${path.basename(filePath)}`;
+        const destPath = path.join(photosDir, fileName);
+        fs.copyFileSync(filePath, destPath);
+        savedPhotos.push(`photos/${fileName}`);
+      }
+
+      return { success: true, photos: savedPhotos };
+    }
+    return { success: false, error: 'No files selected' };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Get full path to a photo
+ipcMain.handle('get-photo-path', async (_event, relativePath: string) => {
+  try {
+    const fullPath = path.join(app.getPath('userData'), relativePath);
+    if (fs.existsSync(fullPath)) {
+      return { success: true, path: fullPath };
+    }
+    return { success: false, error: 'Photo not found' };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Delete a photo
+ipcMain.handle('delete-photo', async (_event, relativePath: string) => {
+  try {
+    const fullPath = path.join(app.getPath('userData'), relativePath);
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+      return { success: true };
+    }
+    return { success: false, error: 'Photo not found' };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }
