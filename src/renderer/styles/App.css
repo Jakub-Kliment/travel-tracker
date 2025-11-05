@@ -38,16 +38,19 @@
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-links button:hover {
   background: rgba(255, 255, 255, 0.05);
   color: #e2e8f0;
+  transform: translateY(-2px);
 }
 
 .nav-links button.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
 }
 
 .nav-actions {
@@ -63,11 +66,17 @@
   border-radius: 8px;
   font-weight: 600;
   box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary:hover {
   box-shadow: 0 6px 8px rgba(102, 126, 234, 0.4);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
 }
 
 .btn-secondary {
@@ -77,10 +86,17 @@
   border-radius: 8px;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
 }
 
 .main-content {

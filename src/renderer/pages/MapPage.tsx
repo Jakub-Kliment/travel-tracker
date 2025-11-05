@@ -514,6 +514,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
 
                 return geographies.map((geo: any) => {
                   const country = getCountryByGeo(geo);
+
                   return (
                     <Geography
                       key={geo.rsmKey}
@@ -522,7 +523,10 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                       stroke="#1a202c"
                       strokeWidth={0.5}
                       style={{
-                        default: { outline: 'none' },
+                        default: {
+                          outline: 'none',
+                          transition: 'all 0.3s ease',
+                        },
                         hover: {
                           fill: (() => {
                             if (!country) return colorSchemes[colorScheme].territory;
@@ -538,8 +542,12 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                           })(),
                           outline: 'none',
                           cursor: 'pointer',
+                          transition: 'all 0.2s ease',
                         },
-                        pressed: { outline: 'none' },
+                        pressed: {
+                          outline: 'none',
+                          transition: 'all 0.1s ease',
+                        },
                       }}
                       onMouseEnter={() => {
                         if (country) {
