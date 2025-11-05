@@ -144,6 +144,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
   const [colorScheme, setColorScheme] = useState<ColorScheme>('green');
   const [colorByVisitType, setColorByVisitType] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Signal to main process when map is ready
   useEffect(() => {
@@ -161,6 +162,18 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
       }
     }
   }, [countries]);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
 
   const getCountryByGeo = (geo: any): Country | undefined => {
     let isoCode = countryIdToIso[geo.id];
@@ -248,7 +261,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
 
   const handleReset = () => {
     setZoom(1);
-    setCenter([0, 0]);
+    setCenter([0, -7]);
   };
 
   const handleMoveEnd = (position: any) => {
@@ -421,7 +434,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
   const visitedTerritoriesCount = territories.filter(c => isCountryVisited(c)).length;
 
   return (
-    <div className="map-page">
+    <div className={`map-page ${isFullscreen ? 'fullscreen' : ''}`}>
+      {!isFullscreen && (
       <div className="map-header">
         <div className="map-stats">
           <h2>
@@ -472,6 +486,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
           )}
         </div>
       </div>
+      )}
 
       <div className="map-container">
         <ComposableMap
@@ -554,16 +569,26 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
           <button onClick={handleZoomIn} className="zoom-btn" title="Zoom In">+</button>
           <button onClick={handleZoomOut} className="zoom-btn" title="Zoom Out">-</button>
           <button onClick={handleReset} className="zoom-btn reset-btn" title="Reset View">⟲</button>
+          {!isFullscreen && (
+            <button
+              onClick={() => setShowCountryList(!showCountryList)}
+              className="zoom-btn list-btn"
+              title="Country List"
+              style={{ fontSize: '1.2rem' }}
+            >
+              ☰
+            </button>
+          )}
           <button
-            onClick={() => setShowCountryList(!showCountryList)}
-            className="zoom-btn list-btn"
-            title="Country List"
-            style={{ fontSize: '1.2rem' }}
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="zoom-btn fullscreen-btn"
+            title={isFullscreen ? "Exit Fullscreen (ESC)" : "Fullscreen"}
           >
-            ☰
+            {isFullscreen ? '⛶' : '⛶'}
           </button>
         </div>
 
+        {!isFullscreen && (
         <div className="map-controls">
           <div className="projection-selector">
             <select
@@ -602,8 +627,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
             </label>
           </div>
         </div>
+        )}
 
-        {showCountryList && (
+        {showCountryList && !isFullscreen && (
           <div className="country-list-panel">
             <div className="country-list-header">
               <h3>All Countries ({regularCountries.length})</h3>

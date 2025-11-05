@@ -52,7 +52,10 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "html-to-image": "^1.11.13",
+    "jspdf": "^3.0.3"
+  },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",

@@ -70,6 +70,8 @@ export interface ElectronAPI {
   selectPhotos: () => Promise<{ success: boolean; photos?: string[]; error?: string }>;
   getPhotoPath: (relativePath: string) => Promise<{ success: boolean; path?: string; error?: string }>;
   deletePhoto: (relativePath: string) => Promise<{ success: boolean; error?: string }>;
+  captureScreenshot: () => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  generatePDFReport: (reportData: any) => Promise<{ success: boolean; filePath?: string; error?: string }>;
 }
 
 declare global {

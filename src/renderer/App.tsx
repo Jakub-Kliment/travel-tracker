@@ -140,30 +140,53 @@ const App: React.FC = () => {
     });
   };
 
-  const handleSave = async () => {
+  const handleExportImage = async () => {
     try {
-      const result = await window.electronAPI.saveData(travelData);
+      const result = await window.electronAPI.captureScreenshot();
       if (result.success) {
-        alert('Data saved successfully!');
+        alert(`Screenshot saved to: ${result.filePath}`);
       } else {
-        alert('Failed to save data: ' + result.error);
+        alert('Failed to capture screenshot: ' + result.error);
       }
     } catch (error) {
-      alert('Failed to save data: ' + (error as Error).message);
+      alert('Failed to capture screenshot: ' + (error as Error).message);
     }
   };
 
-  const handleLoad = async () => {
+  const handleExportPDF = async () => {
     try {
-      const result = await window.electronAPI.loadData();
-      if (result.success && result.data) {
-        setTravelData(result.data);
-        alert('Data loaded successfully!');
+      const { calculateStatistics } = await import('./utils/statistics');
+      const stats = calculateStatistics(travelData.countries);
+
+      const reportData = {
+        visitedCount: stats.visitedCount,
+        totalCountries: stats.totalCountries,
+        visitedPercentage: stats.visitedPercentage.toFixed(1),
+        totalDaysTraveled: stats.totalDaysTraveled,
+        averageTripLength: stats.averageTripLength.toFixed(1),
+        totalTrips: stats.totalTrips,
+        continentStats: stats.continentStats.map(cs => ({
+          continent: cs.continent,
+          visited: cs.visited,
+          total: cs.total,
+          percentage: cs.percentage.toFixed(1),
+        })),
+        visitedCountries: travelData.countries
+          .filter(c => c.visits.length > 0)
+          .map(c => ({
+            name: c.name,
+            visitCount: c.visits.length,
+          })),
+      };
+
+      const result = await window.electronAPI.generatePDFReport(reportData);
+      if (result.success) {
+        alert(`Report saved to: ${result.filePath}`);
       } else {
-        alert('Failed to load data: ' + result.error);
+        alert('Failed to generate PDF: ' + result.error);
       }
     } catch (error) {
-      alert('Failed to load data: ' + (error as Error).message);
+      alert('Failed to generate PDF: ' + (error as Error).message);
     }
   };
 
@@ -188,11 +211,11 @@ const App: React.FC = () => {
           </button>
         </div>
         <div className="nav-actions">
-          <button onClick={handleLoad} className="btn-secondary">
-            Load
+          <button onClick={handleExportImage} className="btn-secondary">
+            📸 Image
           </button>
-          <button onClick={handleSave} className="btn-primary">
-            Save
+          <button onClick={handleExportPDF} className="btn-primary">
+            📄 PDF
           </button>
         </div>
       </nav>

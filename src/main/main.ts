@@ -211,3 +211,105 @@ ipcMain.handle('delete-photo', async (_event, relativePath: string) => {
     return { success: false, error: (error as Error).message };
   }
 });
+
+// Capture screenshot of the current page
+ipcMain.handle('capture-screenshot', async () => {
+  try {
+    if (!mainWindow) {
+      return { success: false, error: 'No window available' };
+    }
+
+    // Hide navbar before capturing
+    await mainWindow.webContents.executeJavaScript(`
+      (function() {
+        const navbar = document.querySelector('.navbar');
+        if (navbar) {
+          navbar.style.display = 'none';
+        }
+      })();
+    `);
+
+    // Wait a moment for the UI to update
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const image = await mainWindow.webContents.capturePage();
+
+    // Show navbar again
+    await mainWindow.webContents.executeJavaScript(`
+      (function() {
+        const navbar = document.querySelector('.navbar');
+        if (navbar) {
+          navbar.style.display = '';
+        }
+      })();
+    `);
+
+    // Show save dialog
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save Screenshot',
+      defaultPath: path.join(app.getPath('pictures'), `travel-tracker-${Date.now()}.png`),
+      filters: [{ name: 'PNG Images', extensions: ['png'] }],
+    });
+
+    if (filePath) {
+      fs.writeFileSync(filePath, image.toPNG());
+      return { success: true, filePath };
+    }
+    return { success: false, error: 'No file selected' };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Generate PDF report
+ipcMain.handle('generate-pdf-report', async (_event, reportData: any) => {
+  try {
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Save PDF Report',
+      defaultPath: path.join(app.getPath('documents'), `travel-report-${Date.now()}.pdf`),
+      filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+    });
+
+    if (!filePath) {
+      return { success: false, error: 'No file selected' };
+    }
+
+    // Create a simple text-based report
+    const lines = [
+      'TRAVEL TRACKER REPORT',
+      '=' .repeat(50),
+      '',
+      `Generated: ${new Date().toLocaleDateString()}`,
+      '',
+      'OVERVIEW',
+      '-'.repeat(50),
+      `Countries Visited: ${reportData.visitedCount} / ${reportData.totalCountries}`,
+      `Percentage: ${reportData.visitedPercentage}%`,
+      `Total Days Traveled: ${reportData.totalDaysTraveled}`,
+      `Average Trip Length: ${reportData.averageTripLength} days`,
+      `Total Trips: ${reportData.totalTrips}`,
+      '',
+      'BY CONTINENT',
+      '-'.repeat(50),
+    ];
+
+    reportData.continentStats.forEach((cs: any) => {
+      lines.push(`${cs.continent}: ${cs.visited} / ${cs.total} (${cs.percentage}%)`);
+    });
+
+    lines.push('');
+    lines.push('VISITED COUNTRIES');
+    lines.push('-'.repeat(50));
+
+    reportData.visitedCountries.forEach((country: any, index: number) => {
+      lines.push(`${index + 1}. ${country.name} (${country.visitCount} visit${country.visitCount > 1 ? 's' : ''})`);
+    });
+
+    const reportContent = lines.join('\n');
+    fs.writeFileSync(filePath, reportContent, 'utf-8');
+
+    return { success: true, filePath };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});

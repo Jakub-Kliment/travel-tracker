@@ -6,6 +6,23 @@
   padding: 2rem;
 }
 
+.map-page.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background: #0f1419;
+  padding: 0;
+}
+
+.map-page.fullscreen .map-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
 .map-header {
   display: flex;
   justify-content: space-between;

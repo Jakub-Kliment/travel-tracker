@@ -11,4 +11,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectPhotos: () => ipcRenderer.invoke('select-photos'),
   getPhotoPath: (relativePath: string) => ipcRenderer.invoke('get-photo-path', relativePath),
   deletePhoto: (relativePath: string) => ipcRenderer.invoke('delete-photo', relativePath),
+  captureScreenshot: () => ipcRenderer.invoke('capture-screenshot'),
+  generatePDFReport: (reportData: any) => ipcRenderer.invoke('generate-pdf-report', reportData),
 });
