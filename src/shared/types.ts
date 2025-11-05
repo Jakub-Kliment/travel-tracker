@@ -1,7 +1,7 @@
 export interface Visit {
   startDate: string;      // ISO date string
   endDate?: string;       // ISO date string (optional for single-day visits)
-  visitType?: 'business' | 'leisure' | 'transit';
+  visitType?: 'work' | 'holiday' | 'transit' | 'other';
   notes?: string;
   rating?: number;        // 1-5 stars
   photos?: string[];      // Relative file paths in userData folder

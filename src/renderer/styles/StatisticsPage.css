@@ -237,13 +237,13 @@
   text-transform: capitalize;
 }
 
-.visit-type-badge.leisure {
+.visit-type-badge.holiday {
   background: rgba(72, 187, 120, 0.2);
   color: #48bb78;
   border: 1px solid rgba(72, 187, 120, 0.4);
 }
 
-.visit-type-badge.business {
+.visit-type-badge.work {
   background: rgba(237, 137, 54, 0.2);
   color: #ed8936;
   border: 1px solid rgba(237, 137, 54, 0.4);
@@ -253,6 +253,12 @@
   background: rgba(236, 201, 75, 0.2);
   color: #ecc94b;
   border: 1px solid rgba(236, 201, 75, 0.4);
+}
+
+.visit-type-badge.other {
+  background: rgba(159, 122, 234, 0.2);
+  color: #9f7aea;
+  border: 1px solid rgba(159, 122, 234, 0.4);
 }
 
 .country-name-with-flag {

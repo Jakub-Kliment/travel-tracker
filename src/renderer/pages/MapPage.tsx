@@ -105,11 +105,11 @@ const colorSchemes = {
 
 // Visit type color scheme
 const visitTypeColors = {
-  leisure: {
+  holiday: {
     color: '#48bb78',
     hover: '#38a169',
   },
-  business: {
+  work: {
     color: '#ed8936',
     hover: '#dd6b20',
   },
@@ -135,7 +135,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
   const [isAddingNewVisit, setIsAddingNewVisit] = useState(false);
   const [newVisitDate, setNewVisitDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
-  const [visitType, setVisitType] = useState<'business' | 'leisure' | 'transit' | ''>('');
+  const [visitType, setVisitType] = useState<'work' | 'holiday' | 'transit' | 'other' | ''>('');
   const [visitNotes, setVisitNotes] = useState('');
   const [visitRating, setVisitRating] = useState<number>(0);
   const [visitPhotos, setVisitPhotos] = useState<string[]>([]);
@@ -452,12 +452,12 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
           {colorByVisitType ? (
             <>
               <div className="legend-item">
-                <div className="legend-color" style={{ background: visitTypeColors.leisure.color }}></div>
-                <span>Leisure</span>
+                <div className="legend-color" style={{ background: visitTypeColors.holiday.color }}></div>
+                <span>Holiday</span>
               </div>
               <div className="legend-item">
-                <div className="legend-color" style={{ background: visitTypeColors.business.color }}></div>
-                <span>Business</span>
+                <div className="legend-color" style={{ background: visitTypeColors.work.color }}></div>
+                <span>Work</span>
               </div>
               <div className="legend-item">
                 <div className="legend-color" style={{ background: visitTypeColors.transit.color }}></div>
@@ -812,9 +812,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                   <div className="form-field">
                     <label>Visit Type</label>
                     <select value={visitType} onChange={(e) => setVisitType(e.target.value as any)}>
-                      <option value="">Other</option>
-                      <option value="leisure">Leisure</option>
-                      <option value="business">Business</option>
+                      <option value="other">Other</option>
+                      <option value="holiday">Holiday</option>
+                      <option value="work">Work</option>
                       <option value="transit">Transit</option>
                     </select>
                   </div>
