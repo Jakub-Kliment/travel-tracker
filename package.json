@@ -1,7 +1,7 @@
 {
   "name": "travel-tracker",
-  "version": "1.0.0",
-  "description": "Interactive world map to track visited countries",
+  "version": "1.2.0",
+  "description": "Feature-rich desktop app to track and visualize travel experiences with photos, ratings, and comprehensive statistics",
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:electron\"",

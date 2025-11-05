@@ -1,75 +1,81 @@
 # Travel Tracker
 
-A desktop application to track countries visited on an interactive world map with statistics.
+This is a simple desktop app where you can click on countries you've been to, add photos, rate your experiences, and keep all your travel memories in one place. 
 
-## Features
+## What it does
 
-- **Interactive World Map**: Click on countries to mark them as visited/unvisited
-- **Visit Date Tracking**: Record when you visited each country
-- **Beautiful Statistics**: View your travel progress with charts and graphs
-- **Continent Breakdowns**: See statistics organized by continent
-- **Timeline View**: Track your travel history chronologically
-- **Data Persistence**: Automatically saves your data, with import/export functionality
-- **Cross-Platform**: Works on Windows, Mac, and Linux
+### The Map
+- Switch between different map styles
+- Pick a color scheme you like - green, blue, purple, or orange
+- Color countries based on why you went there
+
+### Your Trips
+- Been to the same country multiple times? Track each visit separately
+- Add start and end dates for each trip
+- Tag trips as work, holiday, transit, or other
+- Rate your experiences with stars
+- Write down memories and funny stories
+- Upload as many photos as you want for each trip
+
+### Stats
+- See how many countries you've visited and what percentage of the world that is
+- Break it down by continent
+- Check out your top-rated destinations
+- View a timeline of all your travels
+- See your average trip length
+- Split between work and vacation travel
+
+### Sharing
+- Export your map as a PNG to share with friends
+- Generate a PDF report with all your stats
+
+### Privacy
+- Everything saves automatically - no cloud, no accounts, no hassle
+- Your photos and travel info never leave your device
+- Works offline once installed
+- Cross-platform: Windows, Mac, and Linux
 
 ## Getting Started
 
-### Prerequisites
+You'll need Node.js (v16+) and npm installed.
 
-- Node.js (v16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Install dependencies:
 ```bash
+# Install dependencies
 npm install
-```
 
-2. Run in development mode:
-```bash
+# Run it in dev mode
 npm run dev
-```
 
-### Building for Production
-
-Build the application:
-```bash
+# Build for production
 npm run build
+
+# Package it up for your OS
+npm run package         # auto-detects your platform
+npm run package:win     # Windows
+npm run package:mac     # macOS
+npm run package:linux   # Linux
 ```
 
-Package the application for your platform:
-```bash
-# For current platform
-npm run package
+The packaged app ends up in the `release` folder.
 
-# Or for specific platforms
-npm run package:win    # Windows
-npm run package:mac    # macOS
-npm run package:linux  # Linux
-```
+## How to use it
 
-The packaged application will be in the `release` folder.
+**Adding trips:** Click any country on the map. A popup appears where you can add dates, rate it, write notes, and upload photos. Been there multiple times? Just click it again to add another visit.
 
-## Usage
+**Editing trips:** Click on countries you've already visited to see all your trips there. You can edit or delete any of them.
 
-1. **World Map Page**: Click on any country to mark it as visited. You'll be prompted to enter the date of your visit.
-2. **Statistics Page**: View detailed statistics about your travels, including:
-   - Total countries visited
-   - Percentage of world explored
-   - Continent breakdowns
-   - Travel timeline
-   - Lists of visited and unvisited countries
-3. **Save/Load**: Use the buttons in the navigation bar to manually save or load your data. The app also auto-saves your progress.
+**Customizing the map:** Use the dropdowns at the top to change colors, map styles, and how things are displayed. Hit the ⛶ button (or ESC) for fullscreen mode.
 
-## Technology Stack
+**Stats page:** Switch to the Statistics tab to see all your numbers - countries visited, continents conquered, top destinations, travel timeline, and more.
 
-- **Electron**: Desktop application framework
-- **React**: UI library
-- **TypeScript**: Type-safe JavaScript
-- **react-simple-maps**: Interactive world map
-- **Recharts**: Charts and data visualization
-- **Webpack**: Module bundler
+**Export:** Use the 📸 Image or 📄 PDF buttons in the navbar to export your map or generate a travel report.
 
-## LTS 
-v1.1.0
+
+## Built with
+
+Electron + React + TypeScript. Uses react-simple-maps for the interactive map and Recharts for the stats visualizations.
+
+
+**Version 1.2.0**
+
+Recent additions: multiple visits per country, photo gallery, star ratings, trip analytics, fullscreen mode, animations, and export features.
