@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import MapPage from './pages/MapPage';
 import StatisticsPage from './pages/StatisticsPage';
-import { TravelData } from '../shared/types';
+import { TravelData, Visit } from '../shared/types';
 import { getAllCountries } from './utils/countries';
-import 'flag-icons/css/flag-icons.min.css';
 import './styles/App.css';
 
 type Page = 'map' | 'statistics';
@@ -11,6 +10,7 @@ type Page = 'map' | 'statistics';
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('map');
   const [travelData, setTravelData] = useState<TravelData>({
+    version: 2,
     countries: getAllCountries(),
     lastUpdated: new Date().toISOString(),
   });
@@ -26,9 +26,11 @@ const App: React.FC = () => {
           const loadedData = result.data;
           const mergedCountries = allCountries.map(country => {
             const savedCountry = loadedData.countries.find(c => c.code === country.code);
-            return savedCountry ? { ...country, visited: savedCountry.visited, visitDate: savedCountry.visitDate } : country;
+            // Merge visits from saved data, keep new country structure
+            return savedCountry ? { ...country, visits: savedCountry.visits } : country;
           });
           setTravelData({
+            version: 2,
             countries: mergedCountries,
             lastUpdated: loadedData.lastUpdated
           });
@@ -55,28 +57,53 @@ const App: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [travelData]);
 
-  const toggleCountryVisited = (countryCode: string, visitDate?: string) => {
+  const toggleCountryVisited = (countryCode: string, visitData?: Partial<Visit> | 'unmark') => {
     setTravelData((prevData) => {
       const updatedCountries = prevData.countries.map((country) => {
         if (country.code === countryCode) {
-          // If visitDate is provided and country is already visited, just update the date
-          if (visitDate && country.visited) {
+          const isVisited = country.visits.length > 0;
+
+          if (visitData === 'unmark') {
+            // Remove all visits (unmark)
             return {
               ...country,
-              visitDate: visitDate,
+              visits: [],
+            };
+          } else if (isVisited && visitData) {
+            // Update existing visit (replace the most recent one with new data)
+            const newVisit: Visit = {
+              startDate: visitData.startDate || country.visits[0].startDate,
+              endDate: visitData.endDate,
+              visitType: visitData.visitType,
+              notes: visitData.notes,
+              rating: visitData.rating,
+              photos: visitData.photos,
+            };
+            return {
+              ...country,
+              visits: [newVisit],  // Replace with updated visit
+            };
+          } else {
+            // Add a new visit
+            const newVisit: Visit = {
+              startDate: visitData?.startDate || new Date().toISOString().split('T')[0],
+              endDate: visitData?.endDate,
+              visitType: visitData?.visitType,
+              notes: visitData?.notes,
+              rating: visitData?.rating,
+              photos: visitData?.photos,
+            };
+            return {
+              ...country,
+              visits: [newVisit],
             };
           }
-          // Otherwise toggle the visited status
-          return {
-            ...country,
-            visited: !country.visited,
-            visitDate: !country.visited ? (visitDate || new Date().toISOString()) : undefined,
-          };
         }
         return country;
       });
 
       return {
+        version: 2,
         countries: updatedCountries,
         lastUpdated: new Date().toISOString(),
       };

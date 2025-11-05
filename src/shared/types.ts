@@ -1,14 +1,38 @@
+export interface Visit {
+  startDate: string;      // ISO date string
+  endDate?: string;       // ISO date string (optional for single-day visits)
+  visitType?: 'business' | 'leisure' | 'transit';
+  notes?: string;
+  rating?: number;        // 1-5 stars
+  photos?: string[];      // Relative file paths in userData folder
+}
+
 export interface Country {
+  code: string;
+  name: string;
+  visits: Visit[];        // Array of visits (empty = not visited)
+  continent: string;
+  isTerritory?: boolean;  // For disputed territories/dependencies
+}
+
+export interface TravelData {
+  version: number;        // Data format version for migrations
+  countries: Country[];
+  lastUpdated: string;
+}
+
+// Legacy format for migration from v1
+export interface LegacyCountry {
   code: string;
   name: string;
   visited: boolean;
   visitDate?: string;
   continent: string;
-  isTerritory?: boolean; // For disputed territories/dependencies
+  isTerritory?: boolean;
 }
 
-export interface TravelData {
-  countries: Country[];
+export interface LegacyTravelData {
+  countries: LegacyCountry[];
   lastUpdated: string;
 }
 

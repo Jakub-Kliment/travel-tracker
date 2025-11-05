@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:electron\"",
     "dev:renderer": "webpack serve --config webpack.renderer.config.js --mode development",
-    "dev:electron": "webpack --config webpack.main.config.js --mode development && webpack --config webpack.preload.config.js --mode development && electron .",
+    "dev:electron": "npm run build:main && npm run build:preload && wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .",
     "build": "npm run build:main && npm run build:preload && npm run build:renderer",
     "build:main": "webpack --config webpack.main.config.js --mode production",
     "build:preload": "webpack --config webpack.preload.config.js --mode production",
@@ -40,7 +40,7 @@
     },
     "linux": {
       "target": "AppImage",
-      "icon": "build/icon.png",
+      "icon": "build/",
       "category": "Office"
     }
   },
@@ -52,14 +52,7 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "date-fns": "^3.0.6",
-    "flag-icons": "^7.5.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-simple-maps": "^3.0.0",
-    "recharts": "^2.10.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
@@ -67,13 +60,20 @@
     "@types/react-simple-maps": "^3.0.6",
     "concurrently": "^8.2.2",
     "copy-webpack-plugin": "^12.0.2",
+    "cross-env": "^10.1.0",
     "css-loader": "^6.8.1",
+    "date-fns": "^3.0.6",
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
     "html-webpack-plugin": "^5.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-simple-maps": "^3.0.0",
+    "recharts": "^2.10.3",
     "style-loader": "^3.3.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
+    "wait-on": "^9.0.1",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"

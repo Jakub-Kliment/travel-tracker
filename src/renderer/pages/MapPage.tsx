@@ -6,7 +6,8 @@ import {
   ZoomableGroup,
   Sphere,
 } from 'react-simple-maps';
-import { Country } from '../../shared/types';
+import { Country, Visit } from '../../shared/types';
+import { isCountryVisited } from '../../shared/migration';
 import FlagIcon from '../components/FlagIcon';
 import '../styles/MapPage.css';
 
@@ -15,7 +16,7 @@ const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
 
 interface MapPageProps {
   countries: Country[];
-  onToggleCountry: (countryCode: string, visitDate?: string) => void;
+  onToggleCountry: (countryCode: string, visitData?: Partial<Visit> | 'unmark') => void;
 }
 
 // Mapping from numeric country IDs (UN M49) to ISO 3-letter codes
@@ -100,18 +101,43 @@ const colorSchemes = {
   },
 };
 
+// Visit type color scheme
+const visitTypeColors = {
+  leisure: {
+    color: '#48bb78',
+    hover: '#38a169',
+  },
+  business: {
+    color: '#ed8936',
+    hover: '#dd6b20',
+  },
+  transit: {
+    color: '#ecc94b',
+    hover: '#d69e2e',
+  },
+  other: {
+    color: '#9f7aea',
+    hover: '#805ad5',
+  },
+};
+
 const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   const [hoveredCountry, setHoveredCountry] = useState<{ name: string; code: string } | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [center, setCenter] = useState<[number, number]>([0, 0]); // Centered at equator
+  const [center, setCenter] = useState<[number, number]>([0, -7]); // Centered slightly south of equator
   const [showCountryList, setShowCountryList] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showTerritories, setShowTerritories] = useState(true);
   const [editingCountry, setEditingCountry] = useState<Country | null>(null);
   const [newVisitDate, setNewVisitDate] = useState('');
+  const [newEndDate, setNewEndDate] = useState('');
+  const [visitType, setVisitType] = useState<'business' | 'leisure' | 'transit' | ''>('');
+  const [visitNotes, setVisitNotes] = useState('');
+  const [visitRating, setVisitRating] = useState<number>(0);
   const [showTip, setShowTip] = useState(true);
   const [projection, setProjection] = useState<ProjectionType>('geoNaturalEarth1');
   const [colorScheme, setColorScheme] = useState<ColorScheme>('green');
+  const [colorByVisitType, setColorByVisitType] = useState(false);
 
   const getCountryByGeo = (geo: any): Country | undefined => {
     let isoCode = countryIdToIso[geo.id];
@@ -152,11 +178,24 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
     if (isoCode) {
       const country = countries.find((c) => c.code === isoCode);
       if (country) {
-        // If already visited, just toggle it off. Otherwise, mark as visited with current date
-        if (country.visited) {
-          onToggleCountry(isoCode); // Toggle off (no date param)
+        // Always show modal to add/edit visit details
+        setEditingCountry(country);
+
+        if (isCountryVisited(country)) {
+          // Load existing visit data
+          const latestVisit = country.visits[0];
+          setNewVisitDate(latestVisit.startDate);
+          setNewEndDate(latestVisit.endDate || '');
+          setVisitType(latestVisit.visitType || '');
+          setVisitNotes(latestVisit.notes || '');
+          setVisitRating(latestVisit.rating || 0);
         } else {
-          onToggleCountry(isoCode, new Date().toISOString());
+          // New visit - set defaults
+          setNewVisitDate(new Date().toISOString().split('T')[0]);
+          setNewEndDate('');
+          setVisitType('');
+          setVisitNotes('');
+          setVisitRating(0);
         }
       }
     }
@@ -166,7 +205,18 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
     const country = getCountryByGeo(geo);
     const colors = colorSchemes[colorScheme];
     if (!country) return colors.territory;
-    return country.visited ? colors.visited : colors.unvisited;
+
+    if (!isCountryVisited(country)) {
+      return colors.unvisited;
+    }
+
+    // If color by visit type is enabled, use visit type colors
+    if (colorByVisitType && country.visits[0]) {
+      const visitType = country.visits[0].visitType || 'other';
+      return visitTypeColors[visitType].color;
+    }
+
+    return colors.visited;
   };
 
   const handleZoomIn = () => {
@@ -206,39 +256,61 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
   };
 
   const handleCountryListClick = (country: Country, e: React.MouseEvent) => {
-    // If country is already visited, show edit modal
-    if (country.visited) {
-      e.stopPropagation();
-      setEditingCountry(country);
-      // Convert ISO date to YYYY-MM-DD format for input
-      const dateValue = country.visitDate ? country.visitDate.split('T')[0] : new Date().toISOString().split('T')[0];
-      setNewVisitDate(dateValue);
+    e.stopPropagation();
+    // Always show modal for adding/editing visit details
+    setEditingCountry(country);
+
+    if (isCountryVisited(country)) {
+      // Load existing visit data
+      const latestVisit = country.visits[0];
+      setNewVisitDate(latestVisit.startDate);
+      setNewEndDate(latestVisit.endDate || '');
+      setVisitType(latestVisit.visitType || '');
+      setVisitNotes(latestVisit.notes || '');
+      setVisitRating(latestVisit.rating || 0);
     } else {
-      // Mark as visited with current date
-      onToggleCountry(country.code, new Date().toISOString());
+      // New visit - set defaults
+      setNewVisitDate(new Date().toISOString().split('T')[0]);
+      setNewEndDate('');
+      setVisitType('');
+      setVisitNotes('');
+      setVisitRating(0);
     }
   };
 
   const handleSaveDate = () => {
     if (editingCountry && newVisitDate) {
-      // Convert to ISO string
-      const isoDate = new Date(newVisitDate).toISOString();
-      onToggleCountry(editingCountry.code, isoDate);
-      setEditingCountry(null);
-      setNewVisitDate('');
+      // Validate dates
+      if (newEndDate && newEndDate < newVisitDate) {
+        alert('End date cannot be before start date!');
+        return;
+      }
+
+      // Save all visit data
+      onToggleCountry(editingCountry.code, {
+        startDate: newVisitDate,
+        endDate: newEndDate || undefined,
+        visitType: visitType || undefined,
+        notes: visitNotes || undefined,
+        rating: visitRating || undefined,
+      });
+      handleCancelEdit();
     }
   };
 
   const handleCancelEdit = () => {
     setEditingCountry(null);
     setNewVisitDate('');
+    setNewEndDate('');
+    setVisitType('');
+    setVisitNotes('');
+    setVisitRating(0);
   };
 
   const handleUnmarkVisit = () => {
     if (editingCountry) {
-      onToggleCountry(editingCountry.code);
-      setEditingCountry(null);
-      setNewVisitDate('');
+      onToggleCountry(editingCountry.code, 'unmark');
+      handleCancelEdit();
     }
   };
 
@@ -253,8 +325,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
     .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const visitedCountriesCount = regularCountries.filter(c => c.visited).length;
-  const visitedTerritoriesCount = territories.filter(c => c.visited).length;
+  const visitedCountriesCount = regularCountries.filter(c => isCountryVisited(c)).length;
+  const visitedTerritoriesCount = territories.filter(c => isCountryVisited(c)).length;
 
   return (
     <div className="map-page">
@@ -271,14 +343,41 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
           )}
         </div>
         <div className="map-legend">
-          <div className="legend-item">
-            <div className="legend-color visited"></div>
-            <span>Visited</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color not-visited"></div>
-            <span>Not Visited</span>
-          </div>
+          {colorByVisitType ? (
+            <>
+              <div className="legend-item">
+                <div className="legend-color" style={{ background: visitTypeColors.leisure.color }}></div>
+                <span>Leisure</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{ background: visitTypeColors.business.color }}></div>
+                <span>Business</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{ background: visitTypeColors.transit.color }}></div>
+                <span>Transit</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{ background: visitTypeColors.other.color }}></div>
+                <span>Other</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color not-visited"></div>
+                <span>Not Visited</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="legend-item">
+                <div className="legend-color visited"></div>
+                <span>Visited</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color not-visited"></div>
+                <span>Not Visited</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -313,9 +412,18 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                       style={{
                         default: { outline: 'none' },
                         hover: {
-                          fill: country?.visited
-                            ? colorSchemes[colorScheme].visitedHover
-                            : colorSchemes[colorScheme].unvisitedHover,
+                          fill: (() => {
+                            if (!country) return colorSchemes[colorScheme].territory;
+                            if (!isCountryVisited(country)) return colorSchemes[colorScheme].unvisitedHover;
+
+                            // If color by visit type is enabled, use visit type hover colors
+                            if (colorByVisitType && country.visits[0]) {
+                              const visitType = country.visits[0].visitType || 'other';
+                              return visitTypeColors[visitType].hover;
+                            }
+
+                            return colorSchemes[colorScheme].visitedHover;
+                          })(),
                           outline: 'none',
                           cursor: 'pointer',
                         },
@@ -378,12 +486,23 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
               onChange={(e) => setColorScheme(e.target.value as ColorScheme)}
               className="color-dropdown"
               title="Color Scheme"
+              disabled={colorByVisitType}
             >
               <option value="green">🟢 Green</option>
               <option value="blue">🔵 Blue</option>
               <option value="purple">🟣 Purple</option>
               <option value="orange">🟠 Orange</option>
             </select>
+          </div>
+          <div className="color-mode-toggle">
+            <label className="toggle-label">
+              <input
+                type="checkbox"
+                checked={colorByVisitType}
+                onChange={(e) => setColorByVisitType(e.target.checked)}
+              />
+              <span>Color by Visit Type</span>
+            </label>
           </div>
         </div>
 
@@ -404,14 +523,14 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
               {filteredCountries.map(country => (
                 <div
                   key={country.code}
-                  className={`country-list-item ${country.visited ? 'visited' : ''}`}
+                  className={`country-list-item ${isCountryVisited(country) ? 'visited' : ''}`}
                   onClick={(e) => handleCountryListClick(country, e)}
                 >
                   <div className="country-info">
                     <FlagIcon countryCode={country.code} size="small" />
                     <span className="country-name">{country.name}</span>
                   </div>
-                  <span className="country-status">{country.visited ? '✓' : ''}</span>
+                  <span className="country-status">{isCountryVisited(country) ? '✓' : ''}</span>
                 </div>
               ))}
 
@@ -431,14 +550,14 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
                   {showTerritories && filteredTerritories.map(territory => (
                     <div
                       key={territory.code}
-                      className={`country-list-item territory ${territory.visited ? 'visited' : ''}`}
+                      className={`country-list-item territory ${isCountryVisited(territory) ? 'visited' : ''}`}
                       onClick={(e) => handleCountryListClick(territory, e)}
                     >
                       <div className="country-info">
                         <FlagIcon countryCode={territory.code} size="small" />
                         <span className="country-name">{territory.name}</span>
                       </div>
-                      <span className="country-status">{territory.visited ? '✓' : ''}</span>
+                      <span className="country-status">{isCountryVisited(territory) ? '✓' : ''}</span>
                     </div>
                   ))}
                 </>
@@ -466,21 +585,142 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry }) => {
 
       {editingCountry && (
         <div className="modal-overlay" onClick={handleCancelEdit}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content visit-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Edit Visit for {editingCountry.name}</h3>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a0aec0' }}>
-              Visit Date:
-            </label>
-            <input
-              type="date"
-              value={newVisitDate}
-              onChange={(e) => setNewVisitDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-            />
+
+            <div className="form-grid">
+              {/* Start Date */}
+              <div className="form-field">
+                <label>Start Date *</label>
+                <input
+                  type="date"
+                  value={newVisitDate}
+                  onChange={(e) => setNewVisitDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+
+              {/* End Date */}
+              <div className="form-field">
+                <label>End Date (optional)</label>
+                <input
+                  type="date"
+                  value={newEndDate}
+                  onChange={(e) => setNewEndDate(e.target.value)}
+                  min={newVisitDate}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+
+              {/* Visit Type */}
+              <div className="form-field">
+                <label>Visit Type</label>
+                <select value={visitType} onChange={(e) => setVisitType(e.target.value as any)}>
+                  <option value="">Other</option>
+                  <option value="leisure">Leisure</option>
+                  <option value="business">Business</option>
+                  <option value="transit">Transit</option>
+                </select>
+              </div>
+
+              {/* Rating */}
+              <div className="form-field">
+                <label>Rating</label>
+                <div className="rating-input-container">
+                  <input
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={visitRating || ''}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value) && value >= 0 && value <= 5) {
+                        setVisitRating(Math.round(value * 10) / 10); // Round to 1 decimal
+                      } else if (e.target.value === '') {
+                        setVisitRating(0);
+                      }
+                    }}
+                    placeholder="0.0"
+                    className="rating-input"
+                  />
+                  <div className="star-rating-display">
+                    {[1, 2, 3, 4, 5].map((starIndex) => {
+                      // Calculate what portion of this star should be filled
+                      // For rating 3.1: stars 1,2,3 full (100%), star 4 is 1/10 = 10%, star 5 is 0%
+                      const wholeStars = Math.floor(visitRating);
+                      const decimal = visitRating - wholeStars; // Get decimal part (0.0-0.9)
+
+                      let fillPercent = 0;
+                      if (starIndex <= wholeStars) {
+                        fillPercent = 100; // Full star
+                      } else if (starIndex === wholeStars + 1) {
+                        // Star character renders non-linearly, scale down by half
+                        fillPercent = (decimal * 100) / 2;
+                      }
+
+                      return (
+                        <span
+                          key={starIndex}
+                          className="star-container"
+                          onClick={(e) => {
+                            // Calculate click position within the star
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const clickX = e.clientX - rect.left;
+                            const starWidth = rect.width;
+                            const clickPercent = clickX / starWidth;
+
+                            // Convert to decimal (0.0 to 0.9)
+                            const decimal = Math.floor(clickPercent * 10) / 10;
+                            const newRating = (starIndex - 1) + decimal;
+                            setVisitRating(Math.min(5, newRating));
+                          }}
+                          title={`Click position for ${starIndex - 1}.0 to ${starIndex - 1}.9`}
+                        >
+                          <span className="star-bg">☆</span>
+                          {fillPercent > 0 && (
+                            <span
+                              className="star-fill"
+                              style={{ width: `${fillPercent}%` }}
+                            >
+                              ★
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                    {visitRating > 0 && (
+                      <button
+                        className="clear-rating"
+                        onClick={() => setVisitRating(0)}
+                        title="Clear rating"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="form-field" style={{ marginTop: '1rem' }}>
+              <label>Notes & Memories</label>
+              <textarea
+                value={visitNotes}
+                onChange={(e) => setVisitNotes(e.target.value)}
+                placeholder="Add your memories, highlights, or notes about this visit..."
+                rows={3}
+              />
+            </div>
+
             <div className="modal-actions">
-              <button onClick={handleUnmarkVisit} className="btn-secondary" style={{ marginRight: 'auto' }}>
-                Unmark as Visited
-              </button>
+              {isCountryVisited(editingCountry) && (
+                <button onClick={handleUnmarkVisit} className="btn-secondary" style={{ marginRight: 'auto' }}>
+                  Unmark as Visited
+                </button>
+              )}
               <button onClick={handleCancelEdit} className="btn-secondary">
                 Cancel
               </button>
