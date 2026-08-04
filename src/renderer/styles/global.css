@@ -1,10 +1,11 @@
 /*
  * Travel Tracker — an atlas, not a dashboard.
  *
- * The interface is warm paper with printed ink; the map is the one dark
- * surface, framed like a plate bound into a book. Colours are named after
- * what they are in that world (paper, ink, brass) rather than by hue, so
- * the vocabulary stays consistent across the three stylesheets.
+ * The whole interface is warm paper with printed ink, the map included —
+ * it is a plate printed on the same page rather than a window cut into it.
+ * Colours are named after what they are in that world (paper, ink, brass,
+ * sea, coast) rather than by hue, so the vocabulary stays consistent
+ * across the three stylesheets.
  */
 
 :root {
@@ -22,22 +23,28 @@
   /* Brass — the single accent. Used for emphasis, never for decoration. */
   --brass: #a8763e;
   --brass-deep: #85592b;
-  --brass-wash: rgba(168, 118, 62, 0.12);
 
-  /* Map plate — the dark surface the world sits on */
-  --plate: #1c2b33;
-  --plate-deep: #16222a;
-  --ocean: #223a47;
+  /*
+   * The map is printed on the same paper as the rest of the page: a pale
+   * blue-grey sea and coastlines drawn in a soft ink. The land fills live
+   * in MapPage.tsx, since react-simple-maps needs them as literal values.
+   */
+  --sea: #dce6e8;
+  --coast: #8f8778;
 
-  /* Visit states, chosen to read against the plate */
-  --visited: #5c8a63;
-  --visited-deep: #487053;
-  --unvisited: #3c4d5a;
+  /*
+   * Visit states. --visited matches the land wash on the map so the legend
+   * swatch is truthful; --visited-ink is the darker version used for marks
+   * and text, which need contrast against paper rather than against land.
+   */
+  --visited: #6f9470;
+  --visited-ink: #4a7551;
+  --unvisited: #e6dcc6;
 
   /* Visit types — muted, map-legend colours rather than UI accents */
   --type-holiday: #4a7551;
   --type-work: #96683a;
-  --type-transit: #8a6d2f;
+  --type-transit: #8f4c37;
   --type-other: #605e80;
 
   --serif: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;

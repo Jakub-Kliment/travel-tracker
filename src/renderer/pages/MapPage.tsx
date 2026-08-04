@@ -102,56 +102,56 @@ type ProjectionType = 'geoEqualEarth' | 'geoMercator' | 'geoNaturalEarth1';
 
 type ColorScheme = 'green' | 'blue' | 'purple' | 'orange';
 
-// Land colours for the map plate. Unvisited land is a desaturated slate so
-// that visited countries read as ink applied to a printed map.
+// The map is printed on paper: unvisited land is a shade off the page and
+// visited countries read as a wash of colour applied over it.
 const colorSchemes = {
   green: {
-    visited: '#5c8a63',
-    unvisited: '#3c4d5a',
-    visitedHover: '#6d9b73',
-    unvisitedHover: '#495c6b',
-    territory: '#33424e',
+    visited: '#6f9470',
+    unvisited: '#e6dcc6',
+    visitedHover: '#5f8460',
+    unvisitedHover: '#dbcfb4',
+    territory: '#efe7d6',
   },
   blue: {
-    visited: '#4a8299',
-    unvisited: '#3c4d5a',
-    visitedHover: '#5895ac',
-    unvisitedHover: '#495c6b',
-    territory: '#33424e',
+    visited: '#6d94a6',
+    unvisited: '#e6dcc6',
+    visitedHover: '#5d8496',
+    unvisitedHover: '#dbcfb4',
+    territory: '#efe7d6',
   },
   purple: {
-    visited: '#78769b',
-    unvisited: '#3c4d5a',
-    visitedHover: '#8a88ad',
-    unvisitedHover: '#495c6b',
-    territory: '#33424e',
+    visited: '#8b87a8',
+    unvisited: '#e6dcc6',
+    visitedHover: '#7b7798',
+    unvisitedHover: '#dbcfb4',
+    territory: '#efe7d6',
   },
   orange: {
-    visited: '#b0804a',
-    unvisited: '#3c4d5a',
-    visitedHover: '#c39158',
-    unvisitedHover: '#495c6b',
-    territory: '#33424e',
+    visited: '#c08d55',
+    unvisited: '#e6dcc6',
+    visitedHover: '#ad7c47',
+    unvisitedHover: '#dbcfb4',
+    territory: '#efe7d6',
   },
 };
 
-// Visit type colours, muted to sit together on the same plate.
+// Visit type colours, muted so the four sit together on the printed page.
 const visitTypeColors = {
   holiday: {
-    color: '#5c8a63',
-    hover: '#6d9b73',
+    color: '#6f9470',
+    hover: '#5f8460',
   },
   work: {
-    color: '#b0804a',
-    hover: '#c39158',
+    color: '#c08d55',
+    hover: '#ad7c47',
   },
   transit: {
-    color: '#bf9c55',
-    hover: '#d0ae64',
+    color: '#a85f47',
+    hover: '#94513b',
   },
   other: {
-    color: '#78769b',
-    hover: '#8a88ad',
+    color: '#8b87a8',
+    hover: '#7b7798',
   },
 };
 
@@ -476,7 +476,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
             center={center}
             onMoveEnd={handleMoveEnd}
           >
-            <Sphere id="ocean" stroke="#2b4653" strokeWidth={0.4} fill="#223a47" />
+            <Sphere id="ocean" stroke="#b9cbcf" strokeWidth={0.5} fill="#dce6e8" />
             <Geographies geography={worldAtlas as any}>
               {({ geographies }: { geographies: Geo[] }) =>
                 geographies.map((geo: Geo) => {
@@ -487,7 +487,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                       key={geo.rsmKey}
                       geography={geo}
                       fill={getCountryFill(country)}
-                      stroke="#26333d"
+                      stroke="#8f8778"
                       strokeWidth={0.3}
                       style={{
                         default: {
