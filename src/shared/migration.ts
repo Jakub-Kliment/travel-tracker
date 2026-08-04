@@ -6,15 +6,25 @@ const CURRENT_VERSION = 2;
  * Migrates legacy data format (v1) to new format (v2)
  * Converts visited/visitDate to visits array
  */
-export function migrateLegacyData(data: any): TravelData {
+export function migrateLegacyData(data: unknown): TravelData {
+  if (typeof data !== 'object' || data === null) {
+    throw new Error('Travel data file is not a valid object');
+  }
+
+  const candidate = data as Partial<TravelData> & Partial<LegacyTravelData>;
+
+  if (!Array.isArray(candidate.countries)) {
+    throw new Error('Travel data file has no countries list');
+  }
+
   // Check if data needs migration
-  if (data.version === CURRENT_VERSION) {
-    return data as TravelData;
+  if (candidate.version === CURRENT_VERSION) {
+    return candidate as TravelData;
   }
 
   // If no version field, it's legacy v1 data
-  if (!data.version) {
-    const legacyData = data as LegacyTravelData;
+  if (!candidate.version) {
+    const legacyData = candidate as LegacyTravelData;
 
     const migratedCountries: Country[] = legacyData.countries.map((country) => {
       const visits: Visit[] = [];
@@ -45,8 +55,8 @@ export function migrateLegacyData(data: any): TravelData {
   }
 
   // Unknown version, return as-is (will likely cause errors, but safe fallback)
-  console.warn(`Unknown data version: ${data.version}`);
-  return data;
+  console.warn(`Unknown data version: ${candidate.version}`);
+  return candidate as TravelData;
 }
 
 /**

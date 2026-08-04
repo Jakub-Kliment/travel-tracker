@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { pathToFileURL } from 'url';
 import { jsPDF } from 'jspdf';
 import { migrateLegacyData } from '../shared/migration';
+import { resolveWithinDir } from '../shared/paths';
 import { ReportData } from '../shared/types';
 
 let mainWindow: BrowserWindow | null = null;
@@ -45,20 +46,6 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-}
-
-/**
- * Resolves a user-supplied relative path against a base directory, returning
- * undefined if the result would escape that directory. Photo paths come from
- * the data file, which may have been imported from elsewhere.
- */
-function resolveWithinDir(baseDir: string, relativePath: string): string | undefined {
-  const resolvedBase = path.resolve(baseDir);
-  const target = path.resolve(resolvedBase, relativePath);
-  if (target !== resolvedBase && !target.startsWith(resolvedBase + path.sep)) {
-    return undefined;
-  }
-  return target;
 }
 
 app.on('ready', () => {

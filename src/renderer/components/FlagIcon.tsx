@@ -81,10 +81,13 @@ function convertToTwoLetterCode(threeLetterCode: string): string {
     'USA': 'us', 'URY': 'uy', 'UZB': 'uz', 'VUT': 'vu', 'VAT': 'va',
     'VEN': 've', 'VNM': 'vn', 'YEM': 'ye', 'ZMB': 'zm', 'ZWE': 'zw',
     // Disputed territories and special cases
-    'GRL': 'gl', 'ESH': 'eh', 'XKX': 'xk', 'TWN': 'tw', 'PSX': 'ps'
+    'GRL': 'gl', 'ESH': 'eh', 'XKX': 'xk', 'TWN': 'tw', 'ATA': 'aq',
+    // Somaliland and Northern Cyprus use codes of our own making (they have no
+    // ISO assignment) and flag-icons ships no artwork for them, so they fall
+    // through to the placeholder below.
   };
 
-  return mapping[threeLetterCode] || 'un'; // 'un' as fallback for unknown codes
+  return mapping[threeLetterCode] || 'xx'; // 'xx' is the library's placeholder flag
 }
 
 export default FlagIcon;

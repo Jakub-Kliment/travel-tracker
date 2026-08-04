@@ -8,7 +8,7 @@ import {
 } from 'react-simple-maps';
 // Map geometry is bundled rather than fetched, so the app works fully offline.
 import worldAtlas from 'world-atlas/countries-50m.json';
-import { Country, Visit } from '../../shared/types';
+import { Country, Visit, VisitType } from '../../shared/types';
 import { isCountryVisited, getMostRecentVisit } from '../../shared/migration';
 import FlagIcon from '../components/FlagIcon';
 import StarRating from '../components/StarRating';
@@ -76,9 +76,19 @@ const territoryNameToIso: [test: (name: string) => boolean, iso: string][] = [
   [(n) => n.includes('n. cyprus') || n.includes('northern cyprus'), 'NCY'],
 ];
 
+/**
+ * A geography as handed to us by react-simple-maps. The library ships no type
+ * for this, and only these fields are used.
+ */
+interface Geo {
+  rsmKey: string;
+  id?: string;
+  properties?: { name?: string };
+}
+
 /** Resolves an atlas geography to one of our ISO-3 country codes. */
-const resolveIsoCode = (geo: any): string | undefined => {
-  const byId = countryIdToIso[geo.id];
+const resolveIsoCode = (geo: Geo): string | undefined => {
+  const byId = geo.id ? countryIdToIso[geo.id] : undefined;
   if (byId) return byId;
 
   const name = geo.properties?.name?.toLowerCase();
@@ -153,7 +163,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
   const [isAddingNewVisit, setIsAddingNewVisit] = useState(false);
   const [newVisitDate, setNewVisitDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
-  const [visitType, setVisitType] = useState<'work' | 'holiday' | 'transit' | 'other' | ''>('');
+  const [visitType, setVisitType] = useState<VisitType | ''>('');
   const [visitNotes, setVisitNotes] = useState('');
   const [visitRating, setVisitRating] = useState<number>(0);
   const [visitPhotos, setVisitPhotos] = useState<string[]>([]);
@@ -205,13 +215,13 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
     resetVisitForm();
   };
 
-  const getCountryByGeo = (geo: any): Country | undefined => {
+  const getCountryByGeo = (geo: Geo): Country | undefined => {
     const isoCode = resolveIsoCode(geo);
     if (!isoCode) return undefined;
     return countries.find((c) => c.code === isoCode);
   };
 
-  const handleCountryClick = (geo: any) => {
+  const handleCountryClick = (geo: Geo) => {
     const country = getCountryByGeo(geo);
     if (country) {
       openCountryModal(country);
@@ -253,7 +263,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
     setCenter([0, -7]);
   };
 
-  const handleMoveEnd = (position: any) => {
+  const handleMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
     setCenter(position.coordinates);
     setZoom(position.zoom);
   };
@@ -458,8 +468,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
           >
             <Sphere id="ocean" stroke="#2c5282" strokeWidth={0.5} fill="#1e3a5f" />
             <Geographies geography={worldAtlas as any}>
-              {({ geographies }: { geographies: any[] }) =>
-                geographies.map((geo: any) => {
+              {({ geographies }: { geographies: Geo[] }) =>
+                geographies.map((geo: Geo) => {
                   const country = getCountryByGeo(geo);
 
                   return (
@@ -643,7 +653,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
             {!isAddingNewVisit && editingVisitIndex === null && (
               <div className="visits-container">
                 {editingCountry.visits.length === 0 ? (
-                  <p className="no-visits-message">No visits recorded yet. Click "Add Visit" to add your first visit!</p>
+                  <p className="no-visits-message">No visits recorded yet. Click &ldquo;Add Visit&rdquo; to add your first visit!</p>
                 ) : (
                   <>
                     {editingCountry.visits.map((visit, index) => (
@@ -725,11 +735,15 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
 
                   <div className="form-field">
                     <label>Visit Type</label>
-                    <select value={visitType} onChange={(e) => setVisitType(e.target.value as any)}>
-                      <option value="other">Other</option>
+                    <select
+                      value={visitType}
+                      onChange={(e) => setVisitType(e.target.value as VisitType | '')}
+                    >
+                      <option value="">Not specified</option>
                       <option value="holiday">Holiday</option>
                       <option value="work">Work</option>
                       <option value="transit">Transit</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
 
