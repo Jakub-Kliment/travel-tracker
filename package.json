@@ -53,8 +53,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "flag-icons": "^7.5.0",
     "html-to-image": "^1.11.13",
-    "jspdf": "^3.0.3"
+    "jspdf": "^3.0.3",
+    "world-atlas": "^2.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",

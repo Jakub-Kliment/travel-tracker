@@ -6,13 +6,12 @@ import {
   ZoomableGroup,
   Sphere,
 } from 'react-simple-maps';
+// Map geometry is bundled rather than fetched, so the app works fully offline.
+import worldAtlas from 'world-atlas/countries-50m.json';
 import { Country, Visit } from '../../shared/types';
 import { isCountryVisited } from '../../shared/migration';
 import FlagIcon from '../components/FlagIcon';
 import '../styles/MapPage.css';
-
-// Using CDN for map data to keep app size small
-const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json';
 
 interface MapPageProps {
   countries: Country[];
@@ -65,7 +64,25 @@ const countryIdToIso: { [key: string]: string } = {
   '796': 'TCA', '798': 'TUV', '800': 'UGA', '804': 'UKR', '807': 'MKD', '818': 'EGY',
   '826': 'GBR', '831': 'GGY', '832': 'JEY', '833': 'IMN', '834': 'TZA', '840': 'USA',
   '850': 'VIR', '854': 'BFA', '858': 'URY', '860': 'UZB', '862': 'VEN', '876': 'WLF',
-  '882': 'WSM', '887': 'YEM', '894': 'ZMB', '-99': 'XKX'  // Kosovo
+  '882': 'WSM', '887': 'YEM', '894': 'ZMB',
+};
+
+// A few entries in the atlas carry no numeric id (they are not ISO-recognised),
+// so they are matched on their rendered name instead.
+const territoryNameToIso: [test: (name: string) => boolean, iso: string][] = [
+  [(n) => n.includes('kosovo'), 'XKX'],
+  [(n) => n.includes('somaliland'), 'SOL'],
+  [(n) => n.includes('n. cyprus') || n.includes('northern cyprus'), 'NCY'],
+];
+
+/** Resolves an atlas geography to one of our ISO-3 country codes. */
+const resolveIsoCode = (geo: any): string | undefined => {
+  const byId = countryIdToIso[geo.id];
+  if (byId) return byId;
+
+  const name = geo.properties?.name?.toLowerCase();
+  if (!name) return undefined;
+  return territoryNameToIso.find(([test]) => test(name))?.[1];
 };
 
 type ProjectionType = 'geoEqualEarth' | 'geoMercator' | 'geoNaturalEarth1';
@@ -143,24 +160,20 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
   const [projection, setProjection] = useState<ProjectionType>('geoNaturalEarth1');
   const [colorScheme, setColorScheme] = useState<ColorScheme>('green');
   const [colorByVisitType, setColorByVisitType] = useState(false);
-  const [mapReady, setMapReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Signal to main process when map is ready
+  // Geometry is bundled, so the map has rendered by the time this effect runs.
+  // Signals the main process that it is safe to show the window.
   useEffect(() => {
-    if (mapReady && window.electronAPI) {
-      window.electronAPI.mapReady();
-    }
-  }, [mapReady]);
+    window.electronAPI?.mapReady();
+  }, []);
 
-  // Update editingCountry when countries array changes
+  // Keep the open modal in sync when a visit is added/edited/removed.
   useEffect(() => {
-    if (editingCountry) {
-      const updatedCountry = countries.find(c => c.code === editingCountry.code);
-      if (updatedCountry) {
-        setEditingCountry(updatedCountry);
-      }
-    }
+    setEditingCountry((current) => {
+      if (!current) return current;
+      return countries.find((c) => c.code === current.code) ?? current;
+    });
   }, [countries]);
 
   // Handle ESC key to exit fullscreen
@@ -175,57 +188,32 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
 
+  const resetVisitForm = () => {
+    setIsAddingNewVisit(false);
+    setEditingVisitIndex(null);
+    setNewVisitDate('');
+    setNewEndDate('');
+    setVisitType('');
+    setVisitNotes('');
+    setVisitRating(0);
+    setVisitPhotos([]);
+  };
+
+  const openCountryModal = (country: Country) => {
+    setEditingCountry(country);
+    resetVisitForm();
+  };
+
   const getCountryByGeo = (geo: any): Country | undefined => {
-    let isoCode = countryIdToIso[geo.id];
-
-    // Handle territories with N/A IDs or special names by checking name
-    if (!isoCode && geo.properties?.name) {
-      const name = geo.properties.name.toLowerCase();
-      if (name.includes('kosovo')) isoCode = 'XKX';
-      else if (name.includes('somaliland')) isoCode = 'SOL';
-      else if (name.includes('n. cyprus') || name.includes('northern cyprus')) isoCode = 'NCY';
-    }
-
-    // Map known territory IDs to our codes
-    if (geo.id === '304') isoCode = 'GRL'; // Greenland
-    if (geo.id === '732') isoCode = 'ESH'; // Western Sahara
-    if (geo.id === '010') isoCode = 'ATA'; // Antarctica
-
+    const isoCode = resolveIsoCode(geo);
     if (!isoCode) return undefined;
     return countries.find((c) => c.code === isoCode);
   };
 
   const handleCountryClick = (geo: any) => {
-    let isoCode = countryIdToIso[geo.id];
-
-    // Handle territories with N/A IDs or special names by checking name
-    if (!isoCode && geo.properties?.name) {
-      const name = geo.properties.name.toLowerCase();
-      if (name.includes('kosovo')) isoCode = 'XKX';
-      else if (name.includes('somaliland')) isoCode = 'SOL';
-      else if (name.includes('n. cyprus') || name.includes('northern cyprus')) isoCode = 'NCY';
-    }
-
-    // Map known territory IDs to our codes
-    if (geo.id === '304') isoCode = 'GRL'; // Greenland
-    if (geo.id === '732') isoCode = 'ESH'; // Western Sahara
-    if (geo.id === '010') isoCode = 'ATA'; // Antarctica
-
-    if (isoCode) {
-      const country = countries.find((c) => c.code === isoCode);
-      if (country) {
-        // Show modal with all visits
-        setEditingCountry(country);
-        setEditingVisitIndex(null);
-        setIsAddingNewVisit(false);
-        // Clear form
-        setNewVisitDate('');
-        setNewEndDate('');
-        setVisitType('');
-        setVisitNotes('');
-        setVisitRating(0);
-        setVisitPhotos([]);
-      }
+    const country = getCountryByGeo(geo);
+    if (country) {
+      openCountryModal(country);
     }
   };
 
@@ -285,28 +273,13 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
 
   const handleCountryListClick = (country: Country, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Show modal with all visits
-    setEditingCountry(country);
-    setEditingVisitIndex(null);
-    setIsAddingNewVisit(false);
-    // Clear form
-    setNewVisitDate('');
-    setNewEndDate('');
-    setVisitType('');
-    setVisitNotes('');
-    setVisitRating(0);
-    setVisitPhotos([]);
+    openCountryModal(country);
   };
 
   const handleStartAddVisit = () => {
+    resetVisitForm();
     setIsAddingNewVisit(true);
-    setEditingVisitIndex(null);
     setNewVisitDate(new Date().toISOString().split('T')[0]);
-    setNewEndDate('');
-    setVisitType('');
-    setVisitNotes('');
-    setVisitRating(0);
-    setVisitPhotos([]);
   };
 
   const handleStartEditVisit = (visitIndex: number) => {
@@ -348,26 +321,11 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
       onUpdateVisit(editingCountry.code, editingVisitIndex, visitData);
     }
 
-    // Reset form
-    setIsAddingNewVisit(false);
-    setEditingVisitIndex(null);
-    setNewVisitDate('');
-    setNewEndDate('');
-    setVisitType('');
-    setVisitNotes('');
-    setVisitRating(0);
-    setVisitPhotos([]);
+    resetVisitForm();
   };
 
   const handleCancelEditVisit = () => {
-    setIsAddingNewVisit(false);
-    setEditingVisitIndex(null);
-    setNewVisitDate('');
-    setNewEndDate('');
-    setVisitType('');
-    setVisitNotes('');
-    setVisitRating(0);
-    setVisitPhotos([]);
+    resetVisitForm();
   };
 
   const handleDeleteVisit = (visitIndex: number) => {
@@ -380,14 +338,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
 
   const handleCloseModal = () => {
     setEditingCountry(null);
-    setEditingVisitIndex(null);
-    setIsAddingNewVisit(false);
-    setNewVisitDate('');
-    setNewEndDate('');
-    setVisitType('');
-    setVisitNotes('');
-    setVisitRating(0);
-    setVisitPhotos([]);
+    resetVisitForm();
     setViewingPhoto(null);
   };
 
@@ -505,14 +456,9 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
             onMoveEnd={handleMoveEnd}
           >
             <Sphere id="ocean" stroke="#2c5282" strokeWidth={0.5} fill="#1e3a5f" />
-            <Geographies geography={geoUrl}>
-              {({ geographies }: { geographies: any[] }) => {
-                // Signal that map data is loaded
-                if (!mapReady) {
-                  setMapReady(true);
-                }
-
-                return geographies.map((geo: any) => {
+            <Geographies geography={worldAtlas as any}>
+              {({ geographies }: { geographies: any[] }) =>
+                geographies.map((geo: any) => {
                   const country = getCountryByGeo(geo);
 
                   return (
@@ -560,8 +506,8 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                       onClick={() => handleCountryClick(geo)}
                     />
                   );
-                });
-              }}
+                })
+              }
             </Geographies>
           </ZoomableGroup>
         </ComposableMap>

@@ -19,6 +19,20 @@ module.exports = {
         test: /\.css$/,
         use: ['style-loader', 'css-loader'],
       },
+      {
+        // Flag SVGs referenced by flag-icons' CSS. Inlined as data URIs so the
+        // packaged app makes no external asset requests. Only the 4x3 set is
+        // bundled; the square 1x1 variants are unused (they need the .fis class).
+        test: /\.svg$/,
+        include: /flag-icons[\\/]flags[\\/]4x3/,
+        type: 'asset/inline',
+      },
+      {
+        test: /\.svg$/,
+        include: /flag-icons[\\/]flags[\\/]1x1/,
+        type: 'asset/resource',
+        generator: { emit: false, filename: 'unused-flag.svg' },
+      },
     ],
   },
   resolve: {
