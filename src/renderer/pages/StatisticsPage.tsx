@@ -20,16 +20,19 @@ import {
   getMostRecentVisit,
   getBestRating,
 } from '../../shared/migration';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { parseISO, differenceInDays } from 'date-fns';
 import FlagIcon from '../components/FlagIcon';
 import StarRating from '../components/StarRating';
+import { t, continentName, countryName, visitTypeLabel, formatDate, formatMonthYear } from '../i18n';
 import '../styles/StatisticsPage.css';
 
 interface StatisticsPageProps {
   countries: Country[];
 }
 
-const COLORS = ['#48bb78', '#4299e1', '#ed8936', '#9f7aea', '#f56565', '#38b2ac'];
+// A single accent for progress bars: length carries the meaning here,
+// so varying the hue per continent would only add noise.
+const BAR_COLOR = '#a8763e';
 
 const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
   const stats = calculateStatistics(countries);
@@ -52,12 +55,12 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
     .sort((a, b) => b.rating - a.rating);
 
   const pieData = [
-    { name: 'Visited', value: stats.visitedCount },
-    { name: 'Not Visited', value: stats.totalCountries - stats.visitedCount },
+    { name: t.stats.visited, value: stats.visitedCount },
+    { name: t.stats.notVisited, value: stats.totalCountries - stats.visitedCount },
   ];
 
   const barData = stats.continentStats.map((cs) => ({
-    continent: cs.continent,
+    continent: continentName(cs.continent),
     visited: cs.visited,
     notVisited: cs.total - cs.visited,
   }));
@@ -67,40 +70,40 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
       <div className="stats-grid">
         {/* Overview Cards */}
         <div className="stat-card large">
-          <h2>World Progress</h2>
+          <h2>{t.stats.worldProgress}</h2>
           <div className="stat-value">{stats.visitedCount}</div>
-          <div className="stat-label">of {stats.totalCountries} Countries Visited</div>
+          <div className="stat-label">{t.stats.countriesVisitedOf(stats.totalCountries)}</div>
           <div className="progress-bar">
             <div
               className="progress-fill"
               style={{ width: `${stats.visitedPercentage}%` }}
             ></div>
           </div>
-          <p className="stat-percentage">{stats.visitedPercentage.toFixed(1)}% Complete</p>
+          <p className="stat-percentage">{t.stats.percentComplete(stats.visitedPercentage.toFixed(1))}</p>
           {stats.visitedTerritoryCount > 0 && (
             <p className="stat-meta">
-              +{stats.visitedTerritoryCount} of {stats.totalTerritories} territories
+              {t.stats.territoriesLine(stats.visitedTerritoryCount, stats.totalTerritories)}
             </p>
           )}
         </div>
 
         {/* Travel Duration Stats */}
         <div className="stat-card">
-          <h3>Total Days Traveled</h3>
+          <h3>{t.stats.totalDays}</h3>
           <div className="stat-value">{stats.totalDaysTraveled}</div>
-          <div className="stat-label">Days on the Road</div>
+          <div className="stat-label">{t.stats.daysOnRoad}</div>
         </div>
 
         <div className="stat-card">
-          <h3>Average Trip Length</h3>
+          <h3>{t.stats.averageTrip}</h3>
           <div className="stat-value">{stats.averageTripLength.toFixed(1)}</div>
-          <div className="stat-label">Days per Trip</div>
-          <p className="stat-meta">{stats.totalTrips} total trips</p>
+          <div className="stat-label">{t.stats.daysPerTrip}</div>
+          <p className="stat-meta">{t.stats.totalTrips(stats.totalTrips)}</p>
         </div>
 
         {/* Pie Chart */}
         <div className="stat-card">
-          <h3>Distribution</h3>
+          <h3>{t.stats.distribution}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -114,7 +117,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                 dataKey="value"
               >
                 {pieData.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={index === 0 ? '#48bb78' : '#2d3748'} />
+                  <Cell key={`cell-${index}`} fill={index === 0 ? '#a8763e' : '#ddd2ba'} />
                 ))}
               </Pie>
               <Tooltip />
@@ -124,7 +127,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
 
         {/* Visited Countries List */}
         <div className="stat-card">
-          <h3>Visited Countries ({visitedCountries.length})</h3>
+          <h3>{t.stats.visitedCountries(visitedCountries.length)}</h3>
           <div className="country-list">
             {visitedCountries
               .sort((a, b) => {
@@ -146,17 +149,17 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                   >
                     <span className="country-name-with-flag">
                       <FlagIcon countryCode={country.code} size="small" />
-                      {country.name}
+                      {countryName(country)}
                     </span>
                     <div className="country-item-meta">
                       {visitType && (
                         <span className={`visit-type-badge ${visitType}`}>
-                          {visitType}
+                          {visitTypeLabel(visitType)}
                         </span>
                       )}
                       {visitDate && (
                         <span className="visit-date">
-                          {format(parseISO(visitDate), 'MMM yyyy')}
+                          {formatMonthYear(visitDate)}
                         </span>
                       )}
                     </div>
@@ -168,34 +171,35 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
 
         {/* Continent Statistics */}
         <div className="stat-card wide">
-          <h3>By Continent</h3>
+          <h3>{t.stats.byContinent}</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" />
-              <XAxis dataKey="continent" stroke="#a0aec0" />
-              <YAxis stroke="#a0aec0" />
+              <CartesianGrid strokeDasharray="2 4" stroke="#d8cdb4" vertical={false} />
+              <XAxis dataKey="continent" stroke="#9a8b76" tick={{ fontSize: 12 }} />
+              <YAxis stroke="#9a8b76" tick={{ fontSize: 12 }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#2d3748',
-                  border: '1px solid #4a5568',
-                  borderRadius: '8px',
+                  backgroundColor: '#f8f3e8',
+                  border: '1px solid #d8cdb4',
+                  borderRadius: '3px',
+                  fontSize: '0.8125rem',
                 }}
               />
               <Legend />
-              <Bar dataKey="visited" stackId="a" fill="#48bb78" name="Visited" />
-              <Bar dataKey="notVisited" stackId="a" fill="#2d3748" name="Not Visited" />
+              <Bar dataKey="visited" stackId="a" fill="#a8763e" name={t.stats.visited} />
+              <Bar dataKey="notVisited" stackId="a" fill="#ddd2ba" name={t.stats.notVisited} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Continent Details */}
         <div className="stat-card">
-          <h3>Continent Breakdown</h3>
+          <h3>{t.stats.continentBreakdown}</h3>
           <div className="continent-list">
-            {stats.continentStats.map((cs, index) => (
+            {stats.continentStats.map((cs) => (
               <div key={cs.continent} className="continent-item">
                 <div className="continent-header">
-                  <span className="continent-name">{cs.continent}</span>
+                  <span className="continent-name">{continentName(cs.continent)}</span>
                   <span className="continent-count">
                     {cs.visited} / {cs.total}
                   </span>
@@ -203,10 +207,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                 <div className="continent-bar">
                   <div
                     className="continent-bar-fill"
-                    style={{
-                      width: `${cs.percentage}%`,
-                      backgroundColor: COLORS[index % COLORS.length],
-                    }}
+                    style={{ width: `${cs.percentage}%`, backgroundColor: BAR_COLOR }}
                   ></div>
                 </div>
                 <span className="continent-percentage">{cs.percentage.toFixed(1)}%</span>
@@ -217,14 +218,14 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
 
         {/* Not Visited Countries List */}
         <div className="stat-card">
-          <h3>Bucket List ({notVisitedCountries.length})</h3>
+          <h3>{t.stats.bucketList(notVisitedCountries.length)}</h3>
           <div className="country-list">
             {notVisitedCountries
-              .sort((a, b) => a.name.localeCompare(b.name))
+              .sort((a, b) => countryName(a).localeCompare(countryName(b), 'sk'))
               .map((country) => (
                 <div key={country.code} className="country-item not-visited">
                   <FlagIcon countryCode={country.code} size="small" />
-                  {country.name}
+                  {countryName(country)}
                 </div>
               ))}
           </div>
@@ -233,11 +234,11 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
         {/* Visited Territories */}
         {visitedTerritories.length > 0 && (
           <div className="stat-card">
-            <h3>Territories &amp; Disputed Areas ({visitedTerritories.length})</h3>
+            <h3>{t.stats.territories(visitedTerritories.length)}</h3>
             <div className="country-list">
               {visitedTerritories
                 .slice()
-                .sort((a, b) => a.name.localeCompare(b.name))
+                .sort((a, b) => countryName(a).localeCompare(countryName(b), 'sk'))
                 .map((territory) => (
                   <div
                     key={territory.code}
@@ -246,7 +247,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                   >
                     <span className="country-name-with-flag">
                       <FlagIcon countryCode={territory.code} size="small" />
-                      {territory.name}
+                      {countryName(territory)}
                     </span>
                   </div>
                 ))}
@@ -257,12 +258,12 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
         {/* Timeline */}
         {stats.timeline.length > 0 && (
           <div className="stat-card wide">
-            <h3>Travel Timeline</h3>
+            <h3>{t.stats.timeline}</h3>
             <div className="timeline">
               {stats.timeline.map((entry, index) => (
                 <div key={index} className="timeline-entry">
                   <div className="timeline-date">
-                    {format(parseISO(entry.date), 'MMM d, yyyy')}
+                    {formatDate(entry.date)}
                   </div>
                   <div className="timeline-countries">
                     {entry.countryCodes ? (
@@ -292,7 +293,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
         {/* Top Rated Countries */}
         {ratedCountries.length > 0 && (
           <div className="stat-card">
-            <h3>Top Rated Countries</h3>
+            <h3>{t.stats.topRated}</h3>
             <div className="ranking-list">
               {ratedCountries
                 .slice(0, 10)
@@ -305,7 +306,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                     >
                       <span className="rank-number">#{index + 1}</span>
                       <FlagIcon countryCode={country.code} size="small" />
-                      <span className="country-name">{country.name}</span>
+                      <span className="country-name">{countryName(country)}</span>
                       <div className="rating-stars-small">
                         <StarRating rating={rating} size="small" />
                       </div>
@@ -321,26 +322,24 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
       {selectedCountry && isCountryVisited(selectedCountry) && (
         <div className="modal-overlay" onClick={() => setSelectedCountry(null)}>
           <div className="modal-content visit-details-modal multi-visit-modal-stats" onClick={(e) => e.stopPropagation()}>
-            <h3>{selectedCountry.name}</h3>
+            <h3>{countryName(selectedCountry)}</h3>
 
             <div className="all-visits-list">
               {selectedCountry.visits.map((visit, index) => (
                 <div key={index} className="visit-detail-card">
-                  <h4>Visit #{index + 1}</h4>
+                  <h4>{t.visit.visitNumber(index + 1)}</h4>
 
                   <div className="visit-details">
                     <div className="detail-row">
-                      <span className="detail-label">Dates:</span>
+                      <span className="detail-label">{t.visit.dates}</span>
                       <span className="detail-value">
-                        {format(parseISO(visit.startDate), 'MMM d, yyyy')}
-                        {visit.endDate && (
-                          <> - {format(parseISO(visit.endDate), 'MMM d, yyyy')}</>
-                        )}
+                        {formatDate(visit.startDate)}
+                        {visit.endDate && <> – {formatDate(visit.endDate)}</>}
                       </span>
                     </div>
 
                     <div className="detail-row">
-                      <span className="detail-label">Duration:</span>
+                      <span className="detail-label">{t.visit.duration}</span>
                       <span className="detail-value">
                         {(() => {
                           try {
@@ -349,9 +348,9 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                               ? parseISO(visit.endDate)
                               : startDate;
                             const days = differenceInDays(endDate, startDate) + 1;
-                            return `${days} ${days === 1 ? 'day' : 'days'}`;
+                            return t.visit.days(days);
                           } catch {
-                            return '1 day';
+                            return t.visit.days(1);
                           }
                         })()}
                       </span>
@@ -359,14 +358,14 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
 
                     {visit.visitType && (
                       <div className="detail-row">
-                        <span className="detail-label">Type:</span>
-                        <span className="detail-value capitalize">{visit.visitType}</span>
+                        <span className="detail-label">{t.visit.type}</span>
+                        <span className="detail-value">{visitTypeLabel(visit.visitType)}</span>
                       </div>
                     )}
 
                     {visit.rating && (
                       <div className="detail-row">
-                        <span className="detail-label">Rating:</span>
+                        <span className="detail-label">{t.visit.rating}</span>
                         <span className="detail-value rating-stars">
                           <StarRating rating={visit.rating} parenthesizeValue />
                         </span>
@@ -375,14 +374,14 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
 
                     {visit.notes && (
                       <div className="detail-row notes-row">
-                        <span className="detail-label">Notes:</span>
+                        <span className="detail-label">{t.visit.notes}</span>
                         <p className="detail-notes">{visit.notes}</p>
                       </div>
                     )}
 
                     {visit.photos && visit.photos.length > 0 && (
                       <div className="detail-row">
-                        <span className="detail-label">Photos:</span>
+                        <span className="detail-label">{t.visit.photos}</span>
                         <div className="visit-photos-preview">
                           {visit.photos.map((photo, photoIndex) => (
                             <div
@@ -402,8 +401,8 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
             </div>
 
             <div className="modal-actions">
-              <button onClick={() => setSelectedCountry(null)} className="btn-primary">
-                Close
+              <button onClick={() => setSelectedCountry(null)} className="btn-secondary">
+                {t.stats.close}
               </button>
             </div>
           </div>

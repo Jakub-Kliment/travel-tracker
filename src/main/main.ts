@@ -18,8 +18,8 @@ function createWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
-    title: 'Travel Tracker',
-    backgroundColor: '#1a1a2e',
+    title: 'Cestovateľský denník',
+    backgroundColor: '#f2ebdd',
     icon: path.join(__dirname, '../../build/icon.png'),
     show: false,  // Don't show until ready
   });
@@ -82,9 +82,9 @@ app.on('activate', () => {
 ipcMain.handle('save-data', async (_event, data) => {
   try {
     const { filePath } = await dialog.showSaveDialog({
-      title: 'Save Travel Data',
+      title: 'Uložiť údaje',
       defaultPath: path.join(app.getPath('documents'), 'travel-data.json'),
-      filters: [{ name: 'JSON Files', extensions: ['json'] }],
+      filters: [{ name: 'Súbory JSON', extensions: ['json'] }],
     });
 
     if (filePath) {
@@ -101,9 +101,9 @@ ipcMain.handle('save-data', async (_event, data) => {
 ipcMain.handle('load-data', async () => {
   try {
     const { filePaths } = await dialog.showOpenDialog({
-      title: 'Load Travel Data',
+      title: 'Načítať údaje',
       defaultPath: app.getPath('documents'),
-      filters: [{ name: 'JSON Files', extensions: ['json'] }],
+      filters: [{ name: 'Súbory JSON', extensions: ['json'] }],
       properties: ['openFile'],
     });
 
@@ -163,10 +163,10 @@ ipcMain.on('map-ready', () => {
 ipcMain.handle('select-photos', async () => {
   try {
     const { filePaths } = await dialog.showOpenDialog({
-      title: 'Select Photos',
+      title: 'Vybrať fotografie',
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'] }
+        { name: 'Obrázky', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'] }
       ]
     });
 
@@ -264,9 +264,9 @@ ipcMain.handle('capture-screenshot', async () => {
 
     // Show save dialog
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Save Screenshot',
+      title: 'Uložiť obrázok',
       defaultPath: path.join(app.getPath('pictures'), `travel-tracker-${Date.now()}.png`),
-      filters: [{ name: 'PNG Images', extensions: ['png'] }],
+      filters: [{ name: 'Obrázky PNG', extensions: ['png'] }],
     });
 
     if (filePath) {
@@ -283,9 +283,9 @@ ipcMain.handle('capture-screenshot', async () => {
 ipcMain.handle('generate-pdf-report', async (_event, reportData: ReportData) => {
   try {
     const { filePath } = await dialog.showSaveDialog({
-      title: 'Save PDF Report',
+      title: 'Uložiť správu PDF',
       defaultPath: path.join(app.getPath('documents'), `travel-report-${Date.now()}.pdf`),
-      filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+      filters: [{ name: 'Súbory PDF', extensions: ['pdf'] }],
     });
 
     if (!filePath) {
@@ -324,30 +324,30 @@ ipcMain.handle('generate-pdf-report', async (_event, reportData: ReportData) => 
     };
 
     doc.setFont('helvetica', 'bold').setFontSize(22).setTextColor(30);
-    doc.text('Travel Tracker Report', marginX, y);
+    doc.text('Cestovateľský denník', marginX, y);
     y += 22;
     doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(130);
-    doc.text(`Generated ${new Date().toLocaleDateString()}`, marginX, y);
+    doc.text(`Vytvorené ${new Date().toLocaleDateString('sk-SK')}`, marginX, y);
     y += 10;
 
-    heading('Overview');
-    line(`Countries visited: ${reportData.visitedCount} / ${reportData.totalCountries}`);
-    line(`Percentage of the world: ${reportData.visitedPercentage}%`);
-    line(`Total days traveled: ${reportData.totalDaysTraveled}`);
-    line(`Average trip length: ${reportData.averageTripLength} days`);
-    line(`Total trips: ${reportData.totalTrips}`);
+    heading('Prehľad');
+    line(`Navštívené krajiny: ${reportData.visitedCount} z ${reportData.totalCountries}`);
+    line(`Podiel sveta: ${reportData.visitedPercentage} %`);
+    line(`Dni na cestách: ${reportData.totalDaysTraveled}`);
+    line(`Priemerná dĺžka cesty: ${reportData.averageTripLength} dní`);
+    line(`Počet ciest: ${reportData.totalTrips}`);
 
-    heading('By continent');
+    heading('Podľa kontinentov');
     reportData.continentStats.forEach((cs) => {
       line(`${cs.continent}: ${cs.visited} / ${cs.total} (${cs.percentage}%)`);
     });
 
-    heading(`Visited countries (${reportData.visitedCountries.length})`);
+    heading(`Navštívené krajiny (${reportData.visitedCountries.length})`);
     if (reportData.visitedCountries.length === 0) {
-      line('No countries recorded yet.');
+      line('Zatiaľ žiadne záznamy.');
     } else {
       reportData.visitedCountries.forEach((country, index) => {
-        const suffix = country.visitCount > 1 ? ` (${country.visitCount} visits)` : '';
+        const suffix = country.visitCount > 1 ? ` (${country.visitCount}×)` : '';
         line(`${index + 1}. ${country.name}${suffix}`);
       });
     }

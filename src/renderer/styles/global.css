@@ -1,3 +1,54 @@
+/*
+ * Travel Tracker — an atlas, not a dashboard.
+ *
+ * The interface is warm paper with printed ink; the map is the one dark
+ * surface, framed like a plate bound into a book. Colours are named after
+ * what they are in that world (paper, ink, brass) rather than by hue, so
+ * the vocabulary stays consistent across the three stylesheets.
+ */
+
+:root {
+  /* Paper — the UI surface, warm and slightly uneven in tone */
+  --paper: #f2ebdd;
+  --paper-raised: #f8f3e8;
+  --paper-sunken: #e8dfcc;
+  --paper-edge: #d8cdb4;
+
+  /* Ink — text, in three weights of presence */
+  --ink: #2b2118;
+  --ink-muted: #6b5d4c;
+  --ink-faint: #9a8b76;
+
+  /* Brass — the single accent. Used for emphasis, never for decoration. */
+  --brass: #a8763e;
+  --brass-deep: #85592b;
+  --brass-wash: rgba(168, 118, 62, 0.12);
+
+  /* Map plate — the dark surface the world sits on */
+  --plate: #1c2b33;
+  --plate-deep: #16222a;
+  --ocean: #223a47;
+
+  /* Visit states, chosen to read against the plate */
+  --visited: #5c8a63;
+  --visited-deep: #487053;
+  --unvisited: #3c4d5a;
+
+  /* Visit types — muted, map-legend colours rather than UI accents */
+  --type-holiday: #4a7551;
+  --type-work: #96683a;
+  --type-transit: #8a6d2f;
+  --type-other: #605e80;
+
+  --serif: 'Source Serif 4 Variable', Georgia, 'Times New Roman', serif;
+  --sans: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Hairline rules, as in a printed atlas */
+  --rule: 1px solid var(--paper-edge);
+  --radius: 3px;
+  --radius-lg: 5px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -5,84 +56,162 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--sans);
+  font-size: 15px;
+  background-color: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1a1a2e;
-  color: #e2e8f0;
-  overflow: hidden;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-button:hover {
-  transform: translateY(-2px);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-input {
-  font-family: inherit;
-  outline: none;
 }
 
 h1,
 h2,
 h3,
-h4,
-h5,
-h6 {
+h4 {
+  font-family: var(--serif);
   font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+}
+
+/* Focus is always visible — this app is used with a keyboard too. */
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* Form controls, styled once so every field matches. */
+input[type='text'],
+input[type='date'],
+input[type='number'],
+textarea,
+select {
+  padding: 0.5rem 0.625rem;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease;
+}
+
+input[type='text']:focus,
+input[type='date']:focus,
+input[type='number']:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--brass);
+  outline: none;
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* Buttons: one filled, one outlined, one quiet. No lift, no glow. */
+.btn-primary,
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--brass);
+  color: #fdfaf4;
+  border: 1px solid var(--brass);
+}
+
+.btn-primary:hover {
+  background: var(--brass-deep);
+  border-color: var(--brass-deep);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--ink-muted);
+  border: var(--rule);
+}
+
+.btn-secondary:hover {
+  background: var(--paper-sunken);
+  color: var(--ink);
+}
+
+/* Scrollbars, kept unobtrusive and paper-coloured. */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #2d3748;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4a5568;
-  border-radius: 4px;
+  background: var(--paper-edge);
+  border-radius: 5px;
+  border: 3px solid var(--paper);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #718096;
+  background: var(--ink-faint);
 }
 
-/* Flag icon size classes */
-.flag-icon-sm {
-  width: 16px;
-  height: 12px;
+/* Flag icons sit on the baseline next to text. */
+.flag-icon-sm,
+.flag-icon-md,
+.flag-icon-lg {
   display: inline-block;
-  border-radius: 2px;
-  margin-right: 6px;
+  flex-shrink: 0;
+  border-radius: 1px;
+  /* A hairline keeps white flags from disappearing into the paper. */
+  box-shadow: 0 0 0 1px rgba(43, 33, 24, 0.15);
+}
+
+.flag-icon-sm {
+  width: 18px;
+  height: 13px;
+  margin-right: 8px;
 }
 
 .flag-icon-md {
   width: 24px;
   height: 18px;
-  display: inline-block;
-  border-radius: 2px;
-  margin-right: 8px;
+  margin-right: 10px;
 }
 
 .flag-icon-lg {
   width: 32px;
   height: 24px;
-  display: inline-block;
-  border-radius: 3px;
-  margin-right: 10px;
+  margin-right: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

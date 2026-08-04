@@ -3,6 +3,8 @@ import MapPage from './pages/MapPage';
 import StatisticsPage from './pages/StatisticsPage';
 import { TravelData, Visit, ReportData } from '../shared/types';
 import { getAllCountries } from './utils/countries';
+import Icon from './components/Icon';
+import { t, countryName, continentName } from './i18n';
 import './styles/App.css';
 
 type Page = 'map' | 'statistics';
@@ -144,12 +146,12 @@ const App: React.FC = () => {
     try {
       const result = await window.electronAPI.captureScreenshot();
       if (result.success) {
-        alert(`Screenshot saved to: ${result.filePath}`);
+        alert(t.export.imageSaved(result.filePath ?? ''));
       } else {
-        alert('Failed to capture screenshot: ' + result.error);
+        alert(t.export.imageFailed(result.error ?? ''));
       }
     } catch (error) {
-      alert('Failed to capture screenshot: ' + (error as Error).message);
+      alert(t.export.imageFailed((error as Error).message));
     }
   };
 
@@ -166,7 +168,7 @@ const App: React.FC = () => {
         averageTripLength: stats.averageTripLength.toFixed(1),
         totalTrips: stats.totalTrips,
         continentStats: stats.continentStats.map(cs => ({
-          continent: cs.continent,
+          continent: continentName(cs.continent),
           visited: cs.visited,
           total: cs.total,
           percentage: cs.percentage.toFixed(1),
@@ -174,19 +176,20 @@ const App: React.FC = () => {
         visitedCountries: travelData.countries
           .filter(c => c.visits.length > 0)
           .map(c => ({
-            name: c.name,
+            name: countryName(c),
             visitCount: c.visits.length,
-          })),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name, 'sk')),
       };
 
       const result = await window.electronAPI.generatePDFReport(reportData);
       if (result.success) {
-        alert(`Report saved to: ${result.filePath}`);
+        alert(t.export.pdfSaved(result.filePath ?? ''));
       } else {
-        alert('Failed to generate PDF: ' + result.error);
+        alert(t.export.pdfFailed(result.error ?? ''));
       }
     } catch (error) {
-      alert('Failed to generate PDF: ' + (error as Error).message);
+      alert(t.export.pdfFailed((error as Error).message));
     }
   };
 
@@ -194,28 +197,31 @@ const App: React.FC = () => {
     <div className="app">
       <nav className="navbar">
         <div className="nav-brand">
-          <h1>Travel Tracker</h1>
+          <h1>{t.appTitle}</h1>
+          <span className="nav-subtitle">{t.appSubtitle}</span>
         </div>
         <div className="nav-links">
           <button
             className={currentPage === 'map' ? 'active' : ''}
             onClick={() => setCurrentPage('map')}
           >
-            World Map
+            {t.nav.map}
           </button>
           <button
             className={currentPage === 'statistics' ? 'active' : ''}
             onClick={() => setCurrentPage('statistics')}
           >
-            Statistics
+            {t.nav.statistics}
           </button>
         </div>
         <div className="nav-actions">
           <button onClick={handleExportImage} className="btn-secondary">
-            📸 Image
+            <Icon name="camera" className="icon" />
+            {t.nav.exportImage}
           </button>
-          <button onClick={handleExportPDF} className="btn-primary">
-            📄 PDF
+          <button onClick={handleExportPDF} className="btn-secondary">
+            <Icon name="document" className="icon" />
+            {t.nav.exportPdf}
           </button>
         </div>
       </nav>

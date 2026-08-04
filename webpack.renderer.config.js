@@ -33,6 +33,19 @@ module.exports = {
         type: 'asset/resource',
         generator: { emit: false, filename: 'unused-flag.svg' },
       },
+      {
+        // Only the latin subsets are bundled; the others (cyrillic, greek,
+        // vietnamese) would add weight for glyphs this app never shows.
+        test: /\.woff2$/,
+        include: /-latin(-ext)?-wght-normal\.woff2$/,
+        type: 'asset/inline',
+      },
+      {
+        test: /\.woff2$/,
+        exclude: /-latin(-ext)?-wght-normal\.woff2$/,
+        type: 'asset/resource',
+        generator: { emit: false, filename: 'unused-font.woff2' },
+      },
     ],
   },
   resolve: {

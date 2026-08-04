@@ -1,604 +1,419 @@
+/*
+ * The statistics page is laid out as spreads in a book rather than a grid of
+ * floating cards: sections separated by rules, with headings that read like
+ * table captions.
+ *
+ * Modal, star, photo-thumbnail and photo-viewer styles are defined once in
+ * MapPage.css. Both stylesheets are loaded for the whole app, so they apply
+ * here too; the original duplicated them, which meant two sources of truth.
+ */
+
 .statistics-page {
   width: 100%;
   height: 100%;
-  padding: 2rem;
   overflow-y: auto;
+  padding: 1.5rem 2rem 3rem;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 1.5rem;
-  max-width: 1600px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 .stat-card {
-  background: rgba(45, 55, 72, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 1.125rem 1.25rem 1.25rem;
+  background: var(--paper-raised);
+  border: var(--rule);
+  border-radius: var(--radius-lg);
 }
 
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
-}
-
-.stat-card.large {
-  grid-column: span 2;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-}
-
+.stat-card.large,
 .stat-card.wide {
   grid-column: span 2;
 }
 
-.stat-card h2,
-.stat-card h3 {
-  margin-bottom: 1rem;
-  color: #e2e8f0;
-}
-
-.stat-value {
-  font-size: 3.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #48bb78 0%, #38b2ac 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  font-size: 1.125rem;
-  color: #a0aec0;
-  margin-bottom: 1.5rem;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 12px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 1rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #48bb78 0%, #38b2ac 100%);
-  transition: width 0.5s ease;
-  border-radius: 6px;
-}
-
-.stat-percentage {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #48bb78;
-}
-
-.stat-meta {
-  font-size: 0.875rem;
-  color: #a0aec0;
-  margin-top: 0.5rem;
-}
-
-/* Continent List */
-.continent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.continent-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.continent-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.continent-name {
-  font-weight: 600;
-  color: #e2e8f0;
-}
-
-.continent-count {
-  color: #a0aec0;
-  font-size: 0.875rem;
-}
-
-.continent-bar {
-  width: 100%;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.continent-bar-fill {
-  height: 100%;
-  transition: width 0.5s ease;
-  border-radius: 4px;
-}
-
-.continent-percentage {
-  font-size: 0.875rem;
-  color: #a0aec0;
-}
-
-/* Timeline */
-.timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
-
-.timeline-entry {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  border-left: 3px solid #48bb78;
-}
-
-.timeline-date {
-  font-weight: 600;
-  color: #48bb78;
-  min-width: 120px;
-}
-
-.timeline-countries {
-  color: #e2e8f0;
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.timeline-country {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-}
-
-/* Country Lists */
-.country-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
-
-.country-item {
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background 0.2s ease;
-}
-
-.country-item.visited {
-  background: rgba(72, 187, 120, 0.1);
-  border-left: 3px solid #48bb78;
-}
-
-.country-item.not-visited {
-  background: rgba(0, 0, 0, 0.2);
-  color: #a0aec0;
-}
-
-.country-item.clickable {
-  cursor: pointer;
-}
-
-.country-item:hover,
-.country-item.clickable:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.country-item.clickable.visited:hover {
-  background: rgba(72, 187, 120, 0.2);
-  transform: translateX(4px);
-}
-
-.country-item-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.visit-date {
-  font-size: 0.875rem;
-  color: #a0aec0;
-}
-
-.visit-type-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 500;
-  text-transform: capitalize;
-}
-
-.visit-type-badge.holiday {
-  background: rgba(72, 187, 120, 0.2);
-  color: #48bb78;
-  border: 1px solid rgba(72, 187, 120, 0.4);
-}
-
-.visit-type-badge.work {
-  background: rgba(237, 137, 54, 0.2);
-  color: #ed8936;
-  border: 1px solid rgba(237, 137, 54, 0.4);
-}
-
-.visit-type-badge.transit {
-  background: rgba(236, 201, 75, 0.2);
-  color: #ecc94b;
-  border: 1px solid rgba(236, 201, 75, 0.4);
-}
-
-.visit-type-badge.other {
-  background: rgba(159, 122, 234, 0.2);
-  color: #9f7aea;
-  border: 1px solid rgba(159, 122, 234, 0.4);
-}
-
-.country-name-with-flag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 900px) {
   .stat-card.large,
   .stat-card.wide {
     grid-column: span 1;
   }
 }
 
-/* Clickable Timeline Countries */
+/* Section headings sit above a hairline, like a caption over a table. */
+.stat-card h2,
+.stat-card h3 {
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.875rem;
+  border-bottom: var(--rule);
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.stat-card.large h2 {
+  font-size: 1.125rem;
+}
+
+/*
+ * The single big number. Old-style figures and the serif keep it from
+ * reading as a dashboard metric.
+ */
+.stat-value {
+  font-family: var(--serif);
+  font-size: 2.75rem;
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: oldstyle-num;
+  color: var(--ink);
+}
+
+.stat-label {
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}
+
+.stat-meta {
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+}
+
+/* A ruled bar rather than a rounded pill. */
+.progress-bar {
+  height: 6px;
+  margin-top: 0.875rem;
+  background: var(--paper-sunken);
+  border: 1px solid var(--paper-edge);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--brass);
+  transition: width 0.4s ease;
+}
+
+.stat-percentage {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------- continents */
+
+.continent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.continent-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.75rem;
+}
+
+.continent-header {
+  display: contents;
+}
+
+.continent-name {
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+
+.continent-count {
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.continent-bar {
+  grid-column: 1;
+  height: 4px;
+  background: var(--paper-sunken);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.continent-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.continent-percentage {
+  grid-column: 2;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ timeline */
+
+/* A ruled margin with entries hanging off it. */
+.timeline {
+  max-height: 340px;
+  overflow-y: auto;
+  padding-left: 0.875rem;
+  border-left: 1px solid var(--paper-edge);
+}
+
+.timeline-entry {
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.timeline-entry::before {
+  content: '';
+  position: absolute;
+  left: calc(-0.875rem - 3px);
+  top: 0.4rem;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brass);
+}
+
+.timeline-date {
+  font-family: var(--serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: oldstyle-num;
+  color: var(--ink);
+}
+
+.timeline-countries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.timeline-country {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
 .timeline-country.clickable {
   cursor: pointer;
-  transition: all 0.2s;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  transition: color 0.12s ease;
 }
 
 .timeline-country.clickable:hover {
-  background: rgba(72, 187, 120, 0.2);
-  transform: translateY(-1px);
+  color: var(--brass-deep);
 }
 
-/* Visit Details Modal */
-.visit-details-modal {
-  max-width: 500px;
-}
+/* --------------------------------------------------------- entry lists */
 
-.visit-details {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.detail-row {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.detail-row.notes-row {
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.detail-label {
-  font-weight: 600;
-  color: #a0aec0;
-  min-width: 80px;
-}
-
-.detail-value {
-  color: #e2e8f0;
-  flex: 1;
-}
-
-.detail-value.capitalize {
-  text-transform: capitalize;
-}
-
-.detail-notes {
-  color: #e2e8f0;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  margin: 0;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  border-left: 3px solid #48bb78;
-}
-
-/* Modal overlay (reused from MapPage but need it here too) */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  animation: fadeIn 0.2s ease;
-}
-
-.modal-content {
-  background: #2d3748;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-  max-width: 400px;
-  width: 90%;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.modal-content h3 {
-  margin-bottom: 1.5rem;
-  color: #e2e8f0;
-  font-size: 1.25rem;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-}
-
-/* Star Rating Display */
-.rating-stars {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.star-container-display,
-.star-container-display-small {
-  position: relative;
-  display: inline-block;
-  font-size: 1.25rem;
-  width: 1.2em;
-  height: 1.2em;
-  line-height: 1.2em;
-}
-
-.star-container-display-small {
-  font-size: 1rem;
-}
-
-.star-container-display .star-bg,
-.star-container-display-small .star-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  color: #4a5568;
-}
-
-.star-container-display .star-fill,
-.star-container-display-small .star-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  color: #f59e0b;
-  overflow: hidden;
-  white-space: nowrap;
-  display: inline-block;
-}
-
-.rating-number {
-  margin-left: 0.5rem;
-  color: #a0aec0;
-  font-size: 0.875rem;
-}
-
-.rating-number-small {
-  margin-left: 0.25rem;
-  color: #a0aec0;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-/* Rankings List */
+.country-list,
 .ranking-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  max-height: 400px;
+  max-height: 340px;
   overflow-y: auto;
-  padding-right: 0.5rem;
 }
 
+.country-item,
 .ranking-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  transition: all 0.2s;
+  gap: 0.5rem;
+  padding: 0.4rem 0.25rem;
+  border-bottom: 1px solid rgba(216, 205, 180, 0.5);
+  font-size: 0.875rem;
 }
 
+/*
+ * Visited rows carry a type and a date as well as the name. Slovak country
+ * names are long, so rather than squeezing all three onto one line the meta
+ * sits underneath — which also reads more like a journal entry. Plain rows
+ * (the bucket list) stay on a single line.
+ */
+.country-item:has(.country-item-meta) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.125rem;
+  padding-bottom: 0.5rem;
+}
+
+.country-item:last-child,
+.ranking-item:last-child {
+  border-bottom: none;
+}
+
+.country-item.visited {
+  color: var(--ink);
+}
+
+.country-item.not-visited {
+  color: var(--ink-faint);
+}
+
+.country-item.clickable,
 .ranking-item.clickable {
   cursor: pointer;
+  transition: background-color 0.12s ease;
 }
 
+.country-item.clickable:hover,
 .ranking-item.clickable:hover {
-  background: rgba(72, 187, 120, 0.1);
-  transform: translateX(4px);
+  background: var(--paper-sunken);
 }
+
+/* The name takes the free space; the meta column keeps its natural width. */
+.country-name-with-flag {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Indented under the name, so the flag column lines up down the list. */
+.country-item-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-left: 26px;
+}
+
+.country-item .visit-date {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+/* Type badges are small caps in the type's own colour, not filled pills. */
+.visit-type-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.visit-type-badge.holiday {
+  color: var(--type-holiday);
+}
+
+.visit-type-badge.work {
+  color: var(--type-work);
+}
+
+.visit-type-badge.transit {
+  color: #8a6d2f;
+}
+
+.visit-type-badge.other {
+  color: var(--type-other);
+}
+
+/* ------------------------------------------------------------- ranking */
 
 .rank-number {
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: #48bb78;
-  min-width: 2.5rem;
+  width: 1.75rem;
+  flex-shrink: 0;
+  font-family: var(--serif);
+  font-size: 0.8125rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 .ranking-item .country-name {
   flex: 1;
-  color: #e2e8f0;
-  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rating-stars-small {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
+  flex-shrink: 0;
 }
 
-/* Multiple Visits Display */
+/* ------------------------------------------------------- details modal */
+
 .multi-visit-modal-stats {
-  max-width: 700px;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 560px;
 }
 
 .all-visits-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin: 1.5rem 0;
-  max-height: 500px;
-  overflow-y: auto;
+  gap: 1rem;
 }
 
 .visit-detail-card {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 1.25rem;
+  padding: 0.875rem 1rem;
+  background: var(--paper);
+  border: var(--rule);
+  border-left: 2px solid var(--brass);
+  border-radius: var(--radius);
 }
 
 .visit-detail-card h4 {
-  color: #48bb78;
-  margin-bottom: 1rem;
-  font-size: 1rem;
+  margin-bottom: 0.625rem;
+  font-family: var(--serif);
+  font-size: 0.9375rem;
   font-weight: 600;
+  color: var(--ink-muted);
 }
 
-/* Photos in Statistics */
-.visit-photos-preview {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+.visit-details {
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  width: 100%;
 }
 
-.photo-thumbnail {
-  aspect-ratio: 1;
-  border-radius: 6px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: rgba(0, 0, 0, 0.3);
+/* Label/value rows, aligned like a specimen table. */
+.detail-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  font-size: 0.875rem;
 }
 
-.photo-thumbnail:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+.detail-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
-.photo-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.detail-value {
+  color: var(--ink);
 }
 
-/* Photo Viewer Modal */
-.photo-viewer-overlay {
-  z-index: 3000;
-  background: rgba(0, 0, 0, 0.95);
+.detail-row.notes-row {
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
 }
 
-.photo-viewer-content {
-  position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
-  display: flex;
+.detail-notes {
+  font-family: var(--serif);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+}
+
+.rating-stars {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-}
-
-.photo-viewer-content img {
-  max-width: 100%;
-  max-height: 90vh;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-}
-
-.close-photo-viewer {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 2rem;
-  line-height: 1;
-  transition: all 0.2s;
-  z-index: 1;
-}
-
-.close-photo-viewer:hover {
-  background: rgba(220, 38, 38, 0.9);
-  border-color: rgba(220, 38, 38, 1);
-  transform: scale(1.1);
 }
