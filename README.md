@@ -32,7 +32,7 @@ This is a simple desktop app where you can click on countries you've been to, ad
 ### Privacy
 - Everything saves automatically - no cloud, no accounts, no hassle
 - Your photos and travel info never leave your device
-- Works offline once installed
+- Works completely offline - the map and flags are built into the app, so it never makes a network request
 - Cross-platform: Windows, Mac, and Linux
 
 ## Getting Started
@@ -48,6 +48,11 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Check types, lint and run the tests
+npm run typecheck
+npm run lint
+npm test
 
 # Package it up for your OS
 npm run package         # auto-detects your platform
