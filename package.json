@@ -11,6 +11,7 @@
     "build:main": "webpack --config webpack.main.config.js --mode production",
     "build:preload": "webpack --config webpack.preload.config.js --mode production",
     "build:renderer": "webpack --config webpack.renderer.config.js --mode production",
+    "build:pdf-fonts": "python3 scripts/build-pdf-fonts.py",
     "start": "electron .",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
@@ -26,7 +27,8 @@
     "productName": "Travel Tracker",
     "files": [
       "dist/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**/*"
     ],
     "directories": {
       "output": "release",
@@ -38,9 +40,18 @@
       "icon": "build/icon.png"
     },
     "mac": {
-      "target": "dmg",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
       "icon": "build/icon.png",
-      "category": "public.app-category.travel"
+      "category": "public.app-category.travel",
+      "darkModeSupport": false,
+      "identity": null
     },
     "linux": {
       "target": "AppImage",
@@ -76,6 +87,7 @@
     "@typescript-eslint/eslint-plugin": "7.18.0",
     "@typescript-eslint/parser": "7.18.0",
     "concurrently": "^8.2.2",
+    "copy-webpack-plugin": "12.0.2",
     "cross-env": "^10.1.0",
     "css-loader": "^6.8.1",
     "electron": "^28.1.0",

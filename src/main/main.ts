@@ -24,10 +24,23 @@ function createWindow() {
     show: false,  // Don't show until ready
   });
 
-  // Don't show immediately - wait for map-ready signal from renderer
+  // The window is normally revealed by the renderer's 'map-ready' signal, so
+  // the first paint already has the map in it. If the renderer never gets that
+  // far the window must still appear — otherwise the app runs with no visible
+  // window at all, which on macOS leaves only a Dock icon and no way back.
   mainWindow.once('ready-to-show', () => {
     mainWindow?.maximize();
-    // Window will be shown when renderer sends 'map-ready' signal
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isVisible()) {
+        mainWindow.show();
+      }
+    }, 4000);
+  });
+
+  // A failed load would otherwise leave the window hidden forever.
+  mainWindow.webContents.on('did-fail-load', (_e, code, description) => {
+    console.error(`Renderer failed to load: ${description} (${code})`);
+    mainWindow?.show();
   });
 
   // In development, load from webpack dev server
@@ -230,40 +243,65 @@ ipcMain.handle('delete-photo', async (_event, relativePath: string) => {
   }
 });
 
+/*
+ * jsPDF's built-in fonts are WinAnsi-encoded and contain none of the Slovak
+ * letters (č, ď, ĺ, ľ, ň, ŕ, š, ť, ž all sit beyond Latin-1), so a report
+ * using them came out mangled. These are subsets of the same Inter the UI
+ * uses, carrying exactly the characters the report can print.
+ */
+const REPORT_FONT = 'Inter';
+
+const REPORT_FONT_FILES = [
+  { file: 'Inter-Regular.ttf', style: 'normal' },
+  { file: 'Inter-SemiBold.ttf', style: 'bold' },
+];
+
+let reportFontCache: { name: string; style: string; data: string }[] | null = null;
+
+function registerReportFont(doc: jsPDF): void {
+  if (!reportFontCache) {
+    reportFontCache = REPORT_FONT_FILES.map(({ file, style }) => ({
+      name: file,
+      style,
+      data: fs.readFileSync(path.join(__dirname, 'fonts', file)).toString('base64'),
+    }));
+  }
+
+  for (const { name, style, data } of reportFontCache) {
+    doc.addFileToVFS(name, data);
+    doc.addFont(name, REPORT_FONT, style);
+  }
+}
+
+/** Toggles the navbar so it stays out of an exported image. */
+const setNavbarHidden = (window: BrowserWindow, hidden: boolean) =>
+  window.webContents.executeJavaScript(`
+    (function() {
+      const navbar = document.querySelector('.navbar');
+      if (navbar) {
+        navbar.style.display = ${hidden ? "'none'" : "''"};
+      }
+    })();
+  `);
+
 // Capture screenshot of the current page
 ipcMain.handle('capture-screenshot', async () => {
+  const window = mainWindow;
+  if (!window) {
+    return { success: false, error: 'No window available' };
+  }
+
   try {
-    if (!mainWindow) {
-      return { success: false, error: 'No window available' };
-    }
+    await setNavbarHidden(window, true);
+    // Give the compositor a frame to repaint before grabbing the pixels.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const image = await window.webContents.capturePage();
 
-    // Hide navbar before capturing
-    await mainWindow.webContents.executeJavaScript(`
-      (function() {
-        const navbar = document.querySelector('.navbar');
-        if (navbar) {
-          navbar.style.display = 'none';
-        }
-      })();
-    `);
+    // Restore the navbar before the dialog opens, so the app never sits
+    // there with a missing header while the user picks a location.
+    await setNavbarHidden(window, false);
 
-    // Wait a moment for the UI to update
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    const image = await mainWindow.webContents.capturePage();
-
-    // Show navbar again
-    await mainWindow.webContents.executeJavaScript(`
-      (function() {
-        const navbar = document.querySelector('.navbar');
-        if (navbar) {
-          navbar.style.display = '';
-        }
-      })();
-    `);
-
-    // Show save dialog
-    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    const { filePath } = await dialog.showSaveDialog(window, {
       title: 'Uložiť obrázok',
       defaultPath: path.join(app.getPath('pictures'), `travel-tracker-${Date.now()}.png`),
       filters: [{ name: 'Obrázky PNG', extensions: ['png'] }],
@@ -276,6 +314,9 @@ ipcMain.handle('capture-screenshot', async () => {
     return { success: false, error: 'No file selected' };
   } catch (error) {
     return { success: false, error: (error as Error).message };
+  } finally {
+    // If anything above threw, the navbar must not stay hidden.
+    await setNavbarHidden(window, false).catch(() => undefined);
   }
 });
 
@@ -293,6 +334,7 @@ ipcMain.handle('generate-pdf-report', async (_event, reportData: ReportData) => 
     }
 
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    registerReportFont(doc);
     const pageHeight = doc.internal.pageSize.getHeight();
     const marginX = 56;
     const bottomLimit = pageHeight - 56;
@@ -309,7 +351,7 @@ ipcMain.handle('generate-pdf-report', async (_event, reportData: ReportData) => 
     const heading = (text: string) => {
       ensureSpace(34);
       y += 12;
-      doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(40);
+      doc.setFont(REPORT_FONT, 'bold').setFontSize(13).setTextColor(40);
       doc.text(text, marginX, y);
       y += 8;
       doc.setDrawColor(200).line(marginX, y, doc.internal.pageSize.getWidth() - marginX, y);
@@ -318,15 +360,15 @@ ipcMain.handle('generate-pdf-report', async (_event, reportData: ReportData) => 
 
     const line = (text: string) => {
       ensureSpace();
-      doc.setFont('helvetica', 'normal').setFontSize(11).setTextColor(60);
+      doc.setFont(REPORT_FONT, 'normal').setFontSize(11).setTextColor(60);
       doc.text(text, marginX, y);
       y += 16;
     };
 
-    doc.setFont('helvetica', 'bold').setFontSize(22).setTextColor(30);
+    doc.setFont(REPORT_FONT, 'bold').setFontSize(22).setTextColor(30);
     doc.text('Cestovateľský denník', marginX, y);
     y += 22;
-    doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(130);
+    doc.setFont(REPORT_FONT, 'normal').setFontSize(10).setTextColor(130);
     doc.text(`Vytvorené ${new Date().toLocaleDateString('sk-SK')}`, marginX, y);
     y += 10;
 

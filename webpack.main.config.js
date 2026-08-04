@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   target: 'electron-main',
@@ -7,6 +8,13 @@ module.exports = {
     path: path.resolve(__dirname, 'dist/main'),
     filename: 'main.js',
   },
+  plugins: [
+    // The PDF report reads these at runtime, so they ship alongside main.js
+    // rather than being bundled into it.
+    new CopyPlugin({
+      patterns: [{ from: 'src/main/fonts', to: 'fonts' }],
+    }),
+  ],
   module: {
     rules: [
       {
