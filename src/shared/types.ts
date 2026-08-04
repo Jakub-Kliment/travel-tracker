@@ -60,6 +60,27 @@ export interface TimelineEntry {
   countryCodes?: string[]; // Optional for backward compatibility
 }
 
+// Payload sent to the main process to render the PDF report.
+// Numeric fields are pre-formatted as strings by the renderer.
+export interface ReportData {
+  visitedCount: number;
+  totalCountries: number;
+  visitedPercentage: string;
+  totalDaysTraveled: number;
+  averageTripLength: string;
+  totalTrips: number;
+  continentStats: {
+    continent: string;
+    visited: number;
+    total: number;
+    percentage: string;
+  }[];
+  visitedCountries: {
+    name: string;
+    visitCount: number;
+  }[];
+}
+
 // Electron API types for TypeScript
 export interface ElectronAPI {
   saveData: (data: TravelData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
@@ -71,7 +92,7 @@ export interface ElectronAPI {
   getPhotoPath: (relativePath: string) => Promise<{ success: boolean; path?: string; error?: string }>;
   deletePhoto: (relativePath: string) => Promise<{ success: boolean; error?: string }>;
   captureScreenshot: () => Promise<{ success: boolean; filePath?: string; error?: string }>;
-  generatePDFReport: (reportData: any) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  generatePDFReport: (reportData: ReportData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
 }
 
 declare global {

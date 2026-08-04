@@ -1,7 +1,10 @@
-import { app, BrowserWindow, ipcMain, dialog, protocol } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { pathToFileURL } from 'url';
+import { jsPDF } from 'jspdf';
 import { migrateLegacyData } from '../shared/migration';
+import { ReportData } from '../shared/types';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -44,12 +47,31 @@ function createWindow() {
   });
 }
 
+/**
+ * Resolves a user-supplied relative path against a base directory, returning
+ * undefined if the result would escape that directory. Photo paths come from
+ * the data file, which may have been imported from elsewhere.
+ */
+function resolveWithinDir(baseDir: string, relativePath: string): string | undefined {
+  const resolvedBase = path.resolve(baseDir);
+  const target = path.resolve(resolvedBase, relativePath);
+  if (target !== resolvedBase && !target.startsWith(resolvedBase + path.sep)) {
+    return undefined;
+  }
+  return target;
+}
+
 app.on('ready', () => {
-  // Register atom:// protocol to serve local files
-  protocol.registerFileProtocol('atom', (request, callback) => {
-    const url = request.url.substring(7); // Remove 'atom://' prefix
-    const filePath = path.join(app.getPath('userData'), url);
-    callback({ path: filePath });
+  // Serve photos from userData over atom://
+  protocol.handle('atom', (request) => {
+    const { host, pathname } = new URL(request.url);
+    const requested = decodeURIComponent(host + pathname);
+    const filePath = resolveWithinDir(app.getPath('userData'), requested);
+
+    if (!filePath) {
+      return new Response('Forbidden', { status: 403 });
+    }
+    return net.fetch(pathToFileURL(filePath).toString());
   });
 
   createWindow();
@@ -188,7 +210,10 @@ ipcMain.handle('select-photos', async () => {
 // Get full path to a photo
 ipcMain.handle('get-photo-path', async (_event, relativePath: string) => {
   try {
-    const fullPath = path.join(app.getPath('userData'), relativePath);
+    const fullPath = resolveWithinDir(app.getPath('userData'), relativePath);
+    if (!fullPath) {
+      return { success: false, error: 'Invalid photo path' };
+    }
     if (fs.existsSync(fullPath)) {
       return { success: true, path: fullPath };
     }
@@ -201,7 +226,13 @@ ipcMain.handle('get-photo-path', async (_event, relativePath: string) => {
 // Delete a photo
 ipcMain.handle('delete-photo', async (_event, relativePath: string) => {
   try {
-    const fullPath = path.join(app.getPath('userData'), relativePath);
+    // Deletions are confined to the photos folder specifically, so a stray
+    // path can never remove the data file itself.
+    const photosDir = path.join(app.getPath('userData'), 'photos');
+    const fullPath = resolveWithinDir(photosDir, path.relative('photos', relativePath));
+    if (!fullPath) {
+      return { success: false, error: 'Invalid photo path' };
+    }
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
       return { success: true };
@@ -262,7 +293,7 @@ ipcMain.handle('capture-screenshot', async () => {
 });
 
 // Generate PDF report
-ipcMain.handle('generate-pdf-report', async (_event, reportData: any) => {
+ipcMain.handle('generate-pdf-report', async (_event, reportData: ReportData) => {
   try {
     const { filePath } = await dialog.showSaveDialog({
       title: 'Save PDF Report',
@@ -274,39 +305,67 @@ ipcMain.handle('generate-pdf-report', async (_event, reportData: any) => {
       return { success: false, error: 'No file selected' };
     }
 
-    // Create a simple text-based report
-    const lines = [
-      'TRAVEL TRACKER REPORT',
-      '=' .repeat(50),
-      '',
-      `Generated: ${new Date().toLocaleDateString()}`,
-      '',
-      'OVERVIEW',
-      '-'.repeat(50),
-      `Countries Visited: ${reportData.visitedCount} / ${reportData.totalCountries}`,
-      `Percentage: ${reportData.visitedPercentage}%`,
-      `Total Days Traveled: ${reportData.totalDaysTraveled}`,
-      `Average Trip Length: ${reportData.averageTripLength} days`,
-      `Total Trips: ${reportData.totalTrips}`,
-      '',
-      'BY CONTINENT',
-      '-'.repeat(50),
-    ];
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginX = 56;
+    const bottomLimit = pageHeight - 56;
+    let y = 64;
 
-    reportData.continentStats.forEach((cs: any) => {
-      lines.push(`${cs.continent}: ${cs.visited} / ${cs.total} (${cs.percentage}%)`);
+    // Starts a new page once the cursor reaches the bottom margin.
+    const ensureSpace = (needed = 16) => {
+      if (y + needed > bottomLimit) {
+        doc.addPage();
+        y = 64;
+      }
+    };
+
+    const heading = (text: string) => {
+      ensureSpace(34);
+      y += 12;
+      doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(40);
+      doc.text(text, marginX, y);
+      y += 8;
+      doc.setDrawColor(200).line(marginX, y, doc.internal.pageSize.getWidth() - marginX, y);
+      y += 16;
+    };
+
+    const line = (text: string) => {
+      ensureSpace();
+      doc.setFont('helvetica', 'normal').setFontSize(11).setTextColor(60);
+      doc.text(text, marginX, y);
+      y += 16;
+    };
+
+    doc.setFont('helvetica', 'bold').setFontSize(22).setTextColor(30);
+    doc.text('Travel Tracker Report', marginX, y);
+    y += 22;
+    doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(130);
+    doc.text(`Generated ${new Date().toLocaleDateString()}`, marginX, y);
+    y += 10;
+
+    heading('Overview');
+    line(`Countries visited: ${reportData.visitedCount} / ${reportData.totalCountries}`);
+    line(`Percentage of the world: ${reportData.visitedPercentage}%`);
+    line(`Total days traveled: ${reportData.totalDaysTraveled}`);
+    line(`Average trip length: ${reportData.averageTripLength} days`);
+    line(`Total trips: ${reportData.totalTrips}`);
+
+    heading('By continent');
+    reportData.continentStats.forEach((cs) => {
+      line(`${cs.continent}: ${cs.visited} / ${cs.total} (${cs.percentage}%)`);
     });
 
-    lines.push('');
-    lines.push('VISITED COUNTRIES');
-    lines.push('-'.repeat(50));
+    heading(`Visited countries (${reportData.visitedCountries.length})`);
+    if (reportData.visitedCountries.length === 0) {
+      line('No countries recorded yet.');
+    } else {
+      reportData.visitedCountries.forEach((country, index) => {
+        const suffix = country.visitCount > 1 ? ` (${country.visitCount} visits)` : '';
+        line(`${index + 1}. ${country.name}${suffix}`);
+      });
+    }
 
-    reportData.visitedCountries.forEach((country: any, index: number) => {
-      lines.push(`${index + 1}. ${country.name} (${country.visitCount} visit${country.visitCount > 1 ? 's' : ''})`);
-    });
-
-    const reportContent = lines.join('\n');
-    fs.writeFileSync(filePath, reportContent, 'utf-8');
+    fs.writeFileSync(filePath, Buffer.from(doc.output('arraybuffer')));
 
     return { success: true, filePath };
   } catch (error) {

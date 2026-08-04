@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MapPage from './pages/MapPage';
 import StatisticsPage from './pages/StatisticsPage';
-import { TravelData, Visit } from '../shared/types';
+import { TravelData, Visit, ReportData } from '../shared/types';
 import { getAllCountries } from './utils/countries';
 import './styles/App.css';
 
@@ -158,7 +158,7 @@ const App: React.FC = () => {
       const { calculateStatistics } = await import('./utils/statistics');
       const stats = calculateStatistics(travelData.countries);
 
-      const reportData = {
+      const reportData: ReportData = {
         visitedCount: stats.visitedCount,
         totalCountries: stats.totalCountries,
         visitedPercentage: stats.visitedPercentage.toFixed(1),
