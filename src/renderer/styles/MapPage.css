@@ -17,7 +17,7 @@
   z-index: 9999;
   padding: 0;
   gap: 0;
-  background: var(--sea);
+  background: var(--paper-raised);
 }
 
 .map-page.fullscreen .map-container {
@@ -97,10 +97,15 @@
  * The map is a plate printed on the same paper as the page, marked off by a
  * thin rule rather than by a change of surface.
  */
+/*
+ * The backdrop is paper, not sea: the sphere paints its own ocean, so the
+ * area outside the globe reads as the page the map is printed on and the
+ * edge of the world stays visible.
+ */
 .map-container {
   flex: 1;
   position: relative;
-  background: var(--sea);
+  background: var(--paper-raised);
   border: 1px solid var(--paper-edge);
   border-radius: var(--radius-lg);
   overflow: hidden;

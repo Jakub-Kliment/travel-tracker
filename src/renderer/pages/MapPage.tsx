@@ -476,7 +476,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
             center={center}
             onMoveEnd={handleMoveEnd}
           >
-            <Sphere id="ocean" stroke="#b9cbcf" strokeWidth={0.5} fill="#dce6e8" />
+            <Sphere id="ocean" stroke="#8aa6ad" strokeWidth={0.6} fill="#dce6e8" />
             <Geographies geography={worldAtlas as any}>
               {({ geographies }: { geographies: Geo[] }) =>
                 geographies.map((geo: Geo) => {
