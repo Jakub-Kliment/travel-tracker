@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { plural, countryName, continentName, visitTypeLabel } from './i18n';
+import { t, plural, countryName, continentName, visitTypeLabel } from './i18n';
 import { getAllCountries } from './utils/countries';
 import { isoThreeToTwo } from './utils/isoCodes';
 
@@ -10,6 +10,32 @@ describe('plural', () => {
     expect(plural(4, 'deň', 'dni', 'dní')).toBe('dni');
     expect(plural(5, 'deň', 'dni', 'dní')).toBe('dní');
     expect(plural(0, 'deň', 'dni', 'dní')).toBe('dní');
+  });
+});
+
+describe('statistics wording', () => {
+  it('agrees the day count with the number in front of it', () => {
+    expect(t.stats.daysOnRoad(1)).toBe('deň strávených mimo domova');
+    expect(t.stats.daysOnRoad(3)).toBe('dni strávených mimo domova');
+    expect(t.stats.daysOnRoad(207)).toBe('dní strávených mimo domova');
+  });
+
+  it('agrees the trip count with the number in front of it', () => {
+    expect(t.stats.totalTrips(1)).toBe('spolu 1 cesta');
+    expect(t.stats.totalTrips(2)).toBe('spolu 2 cesty');
+    expect(t.stats.totalTrips(20)).toBe('spolu 20 ciest');
+  });
+
+  // "z" governs the genitive plural, so the noun does not follow the count.
+  it('keeps the territory line in the genitive regardless of the numbers', () => {
+    expect(t.stats.territoriesLine(1, 5)).toBe('a k tomu 1 z 5 území');
+    expect(t.stats.territoriesLine(2, 3)).toBe('a k tomu 2 z 3 území');
+    expect(t.stats.territoriesLine(1, 1)).toBe('a k tomu 1 z 1 území');
+  });
+
+  it('does not leave a stray space before the percent sign', () => {
+    // Slovak puts a space before %, but it must be a single one.
+    expect(t.stats.percentComplete('9.1')).toBe('9.1 % sveta');
   });
 });
 

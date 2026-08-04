@@ -12,7 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { Country } from '../../shared/types';
+import { Country, VisitType } from '../../shared/types';
 import { calculateStatistics } from '../utils/statistics';
 import {
   isCountryVisited,
@@ -34,6 +34,17 @@ interface StatisticsPageProps {
 // so varying the hue per continent would only add noise.
 const BAR_COLOR = '#a8763e';
 
+// Trip types keep the order and the colours used by the map legend, so the
+// two pages describe the same journeys the same way.
+const TRIP_TYPE_ORDER: VisitType[] = ['holiday', 'work', 'transit', 'other'];
+
+const TRIP_TYPE_COLORS: Record<VisitType, string> = {
+  holiday: '#6f9470',
+  work: '#c08d55',
+  transit: '#a85f47',
+  other: '#8b87a8',
+};
+
 const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
   const stats = calculateStatistics(countries);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -54,10 +65,25 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
     .filter((entry): entry is { country: Country; rating: number } => entry.rating !== undefined)
     .sort((a, b) => b.rating - a.rating);
 
-  const pieData = [
-    { name: t.stats.visited, value: stats.visitedCount },
-    { name: t.stats.notVisited, value: stats.totalCountries - stats.visitedCount },
-  ];
+  // Every visit counted by its type, including territories — a trip is a trip.
+  // Untyped visits fall under "other", which is what the map does too.
+  const tripTypeCounts = countries
+    .flatMap((country) => country.visits)
+    .reduce<Record<VisitType, number>>(
+      (counts, visit) => {
+        const type = visit.visitType ?? 'other';
+        counts[type] += 1;
+        return counts;
+      },
+      { holiday: 0, work: 0, transit: 0, other: 0 }
+    );
+
+  const tripTypeData = TRIP_TYPE_ORDER.filter((type) => tripTypeCounts[type] > 0).map((type) => ({
+    type,
+    name: visitTypeLabel(type),
+    value: tripTypeCounts[type],
+    color: TRIP_TYPE_COLORS[type],
+  }));
 
   const barData = stats.continentStats.map((cs) => ({
     continent: continentName(cs.continent),
@@ -68,7 +94,14 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
   return (
     <div className="statistics-page">
       <div className="stats-grid">
-        {/* Overview Cards */}
+        {/*
+          * Reading order, broadest first:
+          *   1. how much of the world   2. how much time it took
+          *   3. what kind of trips      4. where, per continent
+          *   5. the lists themselves    6. when it all happened
+          */}
+
+        {/* 1 — Headline: how much of the world */}
         <div className="stat-card large">
           <h2>{t.stats.worldProgress}</h2>
           <div className="stat-value">{stats.visitedCount}</div>
@@ -87,11 +120,11 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
           )}
         </div>
 
-        {/* Travel Duration Stats */}
+        {/* 2 — How much time that took */}
         <div className="stat-card">
           <h3>{t.stats.totalDays}</h3>
           <div className="stat-value">{stats.totalDaysTraveled}</div>
-          <div className="stat-label">{t.stats.daysOnRoad}</div>
+          <div className="stat-label">{t.stats.daysOnRoad(stats.totalDaysTraveled)}</div>
         </div>
 
         <div className="stat-card">
@@ -101,37 +134,134 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
           <p className="stat-meta">{t.stats.totalTrips(stats.totalTrips)}</p>
         </div>
 
-        {/* Pie Chart */}
+        {/* 3 — What kind of trips they were */}
         <div className="stat-card">
-          <h3>{t.stats.distribution}</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={(entry) => `${entry.name}: ${entry.value}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={index === 0 ? '#a8763e' : '#ddd2ba'} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+          <h3>{t.stats.tripTypes}</h3>
+          {tripTypeData.length === 0 ? (
+            <p className="empty-note">{t.stats.noTripTypes}</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={tripTypeData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={42}
+                  outerRadius={78}
+                  paddingAngle={1}
+                  dataKey="value"
+                  nameKey="name"
+                  stroke="#f8f3e8"
+                  strokeWidth={2}
+                >
+                  {tripTypeData.map((entry) => (
+                    <Cell key={entry.type} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  separator=": "
+                  contentStyle={{
+                    backgroundColor: '#f8f3e8',
+                    border: '1px solid #d8cdb4',
+                    borderRadius: '3px',
+                    fontSize: '0.8125rem',
+                  }}
+                />
+                <Legend
+                  layout="vertical"
+                  align="right"
+                  verticalAlign="middle"
+                  iconType="square"
+                  iconSize={9}
+                  formatter={(value: string, entry) => {
+                    const count = (entry?.payload as { value?: number } | undefined)?.value;
+                    return `${value} · ${count ?? 0}`;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="stat-card wide">
+          <h3>{t.stats.byContinent}</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={barData}>
+              <CartesianGrid strokeDasharray="2 4" stroke="#d8cdb4" vertical={false} />
+              <XAxis dataKey="continent" stroke="#9a8b76" tick={{ fontSize: 12 }} />
+              <YAxis stroke="#9a8b76" tick={{ fontSize: 12 }} />
+              <Tooltip
+                separator=": "
+                contentStyle={{
+                  backgroundColor: '#f8f3e8',
+                  border: '1px solid #d8cdb4',
+                  borderRadius: '3px',
+                  fontSize: '0.8125rem',
+                }}
+              />
+              <Legend />
+              <Bar dataKey="visited" stackId="a" fill="#a8763e" name={t.stats.visited} />
+              <Bar dataKey="notVisited" stackId="a" fill="#ddd2ba" name={t.stats.notVisited} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Visited Countries List */}
+        {/* 4 — The same continents, as numbers */}
+        <div className="stat-card">
+          <h3>{t.stats.continentBreakdown}</h3>
+          <div className="continent-list">
+            {stats.continentStats.map((cs) => (
+              <div key={cs.continent} className="continent-item">
+                <div className="continent-header">
+                  <span className="continent-name">{continentName(cs.continent)}</span>
+                  <span className="continent-count">
+                    {cs.visited} / {cs.total}
+                  </span>
+                </div>
+                <div className="continent-bar">
+                  <div
+                    className="continent-bar-fill"
+                    style={{ width: `${cs.percentage}%`, backgroundColor: BAR_COLOR }}
+                  ></div>
+                </div>
+                <span className="continent-percentage">{cs.percentage.toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 5 — The lists: best first, then everywhere visited, then what is left */}
+        {ratedCountries.length > 0 && (
+          <div className="stat-card">
+            <h3>{t.stats.topRated}</h3>
+            <div className="ranking-list">
+              {ratedCountries
+                .slice(0, 10)
+                .map(({ country, rating }, index) => (
+                  <div
+                    key={country.code}
+                    className="ranking-item clickable"
+                    onClick={() => setSelectedCountry(country)}
+                  >
+                    <span className="rank-number">#{index + 1}</span>
+                    <FlagIcon countryCode={country.code} size="small" />
+                    <span className="country-name">{countryName(country)}</span>
+                    <div className="rating-stars-small">
+                      <StarRating rating={rating} size="small" />
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         <div className="stat-card">
           <h3>{t.stats.visitedCountries(visitedCountries.length)}</h3>
           <div className="country-list">
             {visitedCountries
+              .slice()
               .sort((a, b) => {
-                // Sort by visit date, most recent first
+                // Most recently visited first
                 const dateA = getMostRecentVisitDate(a);
                 const dateB = getMostRecentVisitDate(b);
                 const timeA = dateA ? new Date(dateA).getTime() : 0;
@@ -158,9 +288,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                         </span>
                       )}
                       {visitDate && (
-                        <span className="visit-date">
-                          {formatMonthYear(visitDate)}
-                        </span>
+                        <span className="visit-date">{formatMonthYear(visitDate)}</span>
                       )}
                     </div>
                   </div>
@@ -169,69 +297,6 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
           </div>
         </div>
 
-        {/* Continent Statistics */}
-        <div className="stat-card wide">
-          <h3>{t.stats.byContinent}</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="2 4" stroke="#d8cdb4" vertical={false} />
-              <XAxis dataKey="continent" stroke="#9a8b76" tick={{ fontSize: 12 }} />
-              <YAxis stroke="#9a8b76" tick={{ fontSize: 12 }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#f8f3e8',
-                  border: '1px solid #d8cdb4',
-                  borderRadius: '3px',
-                  fontSize: '0.8125rem',
-                }}
-              />
-              <Legend />
-              <Bar dataKey="visited" stackId="a" fill="#a8763e" name={t.stats.visited} />
-              <Bar dataKey="notVisited" stackId="a" fill="#ddd2ba" name={t.stats.notVisited} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Continent Details */}
-        <div className="stat-card">
-          <h3>{t.stats.continentBreakdown}</h3>
-          <div className="continent-list">
-            {stats.continentStats.map((cs) => (
-              <div key={cs.continent} className="continent-item">
-                <div className="continent-header">
-                  <span className="continent-name">{continentName(cs.continent)}</span>
-                  <span className="continent-count">
-                    {cs.visited} / {cs.total}
-                  </span>
-                </div>
-                <div className="continent-bar">
-                  <div
-                    className="continent-bar-fill"
-                    style={{ width: `${cs.percentage}%`, backgroundColor: BAR_COLOR }}
-                  ></div>
-                </div>
-                <span className="continent-percentage">{cs.percentage.toFixed(1)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Not Visited Countries List */}
-        <div className="stat-card">
-          <h3>{t.stats.bucketList(notVisitedCountries.length)}</h3>
-          <div className="country-list">
-            {notVisitedCountries
-              .sort((a, b) => countryName(a).localeCompare(countryName(b), 'sk'))
-              .map((country) => (
-                <div key={country.code} className="country-item not-visited">
-                  <FlagIcon countryCode={country.code} size="small" />
-                  {countryName(country)}
-                </div>
-              ))}
-          </div>
-        </div>
-
-        {/* Visited Territories */}
         {visitedTerritories.length > 0 && (
           <div className="stat-card">
             <h3>{t.stats.territories(visitedTerritories.length)}</h3>
@@ -255,64 +320,47 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
           </div>
         )}
 
-        {/* Timeline */}
+        <div className="stat-card">
+          <h3>{t.stats.bucketList(notVisitedCountries.length)}</h3>
+          <div className="country-list">
+            {notVisitedCountries
+              .slice()
+              .sort((a, b) => countryName(a).localeCompare(countryName(b), 'sk'))
+              .map((country) => (
+                <div key={country.code} className="country-item not-visited">
+                  <FlagIcon countryCode={country.code} size="small" />
+                  {countryName(country)}
+                </div>
+              ))}
+          </div>
+        </div>
+
+        {/* 6 — When it all happened */}
         {stats.timeline.length > 0 && (
           <div className="stat-card wide">
             <h3>{t.stats.timeline}</h3>
             <div className="timeline">
-              {stats.timeline.map((entry, index) => (
-                <div key={index} className="timeline-entry">
-                  <div className="timeline-date">
-                    {formatDate(entry.date)}
-                  </div>
+              {stats.timeline.map((entry) => (
+                <div key={entry.date} className="timeline-entry">
+                  <div className="timeline-date">{formatDate(entry.date)}</div>
                   <div className="timeline-countries">
-                    {entry.countryCodes ? (
-                      entry.countries.map((name, idx) => {
-                        const country = countries.find(c => c.code === entry.countryCodes![idx]);
-                        return (
-                          <span
-                            key={entry.countryCodes![idx]}
-                            className="timeline-country clickable"
-                            onClick={() => country && setSelectedCountry(country)}
-                          >
-                            <FlagIcon countryCode={entry.countryCodes![idx]} size="small" />
-                            {name}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      entry.countries.join(', ')
-                    )}
+                    {entry.countries.map((name, idx) => {
+                      const code = entry.countryCodes?.[idx];
+                      const country = code ? countries.find((c) => c.code === code) : undefined;
+                      return (
+                        <span
+                          key={code ?? name}
+                          className={`timeline-country${country ? ' clickable' : ''}`}
+                          onClick={() => country && setSelectedCountry(country)}
+                        >
+                          {code && <FlagIcon countryCode={code} size="small" />}
+                          {country ? countryName(country) : name}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Top Rated Countries */}
-        {ratedCountries.length > 0 && (
-          <div className="stat-card">
-            <h3>{t.stats.topRated}</h3>
-            <div className="ranking-list">
-              {ratedCountries
-                .slice(0, 10)
-                .map(({ country, rating }, index) => {
-                  return (
-                    <div
-                      key={country.code}
-                      className="ranking-item clickable"
-                      onClick={() => setSelectedCountry(country)}
-                    >
-                      <span className="rank-number">#{index + 1}</span>
-                      <FlagIcon countryCode={country.code} size="small" />
-                      <span className="country-name">{countryName(country)}</span>
-                      <div className="rating-stars-small">
-                        <StarRating rating={rating} size="small" />
-                      </div>
-                    </div>
-                  );
-                })}
             </div>
           </div>
         )}

@@ -84,6 +84,16 @@
   color: var(--ink-faint);
 }
 
+/* Shown in place of a chart when there is nothing yet to draw. */
+.empty-note {
+  padding: 1.5rem 0;
+  text-align: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.9375rem;
+  color: var(--ink-faint);
+}
+
 /* A ruled bar rather than a rounded pill. */
 .progress-bar {
   height: 6px;

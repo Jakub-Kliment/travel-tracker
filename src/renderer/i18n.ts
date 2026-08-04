@@ -83,23 +83,32 @@ export const t = {
   },
 
   stats: {
-    worldProgress: 'Prehľad',
-    countriesVisitedOf: (total: number) => `zo ${total} krajín navštívených`,
+    // — Prehľad (the headline card)
+    worldProgress: 'Navštívené krajiny',
+    countriesVisitedOf: (total: number) => `z ${total} krajín sveta`,
     percentComplete: (pct: string) => `${pct} % sveta`,
+    // "z" always takes the genitive plural, so the noun does not vary here.
     territoriesLine: (visited: number, total: number) =>
-      `+ ${visited} z ${total} ${plural(total, 'územia', 'území', 'území')}`,
+      `a k tomu ${visited} z ${total} území`,
+
+    // — Cesty (trip totals)
     totalDays: 'Dni na cestách',
-    daysOnRoad: 'spolu strávených mimo domova',
+    daysOnRoad: (n: number) => `${plural(n, 'deň', 'dni', 'dní')} strávených mimo domova`,
     averageTrip: 'Priemerná dĺžka cesty',
     daysPerTrip: 'dní na jednu cestu',
-    totalTrips: (n: number) => `${n} ${plural(n, 'cesta', 'cesty', 'ciest')} celkom`,
-    distribution: 'Pomer',
+    totalTrips: (n: number) => `spolu ${n} ${plural(n, 'cesta', 'cesty', 'ciest')}`,
+
+    // — Rozpis (breakdowns)
+    tripTypes: 'Typy ciest',
+    noTripTypes: 'Pri žiadnej ceste nie je uvedený typ.',
     visited: 'Navštívené',
     notVisited: 'Nenavštívené',
+    byContinent: 'Kontinenty v číslach',
+    continentBreakdown: 'Podiel kontinentov',
+
+    // — Zoznamy (lists)
     visitedCountries: (n: number) => `Navštívené krajiny (${n})`,
-    byContinent: 'Podľa kontinentov',
-    continentBreakdown: 'Rozpis kontinentov',
-    bucketList: (n: number) => `Ešte len čakajú (${n})`,
+    bucketList: (n: number) => `Kam sa ešte chystám (${n})`,
     territories: (n: number) => `Územia a sporné oblasti (${n})`,
     timeline: 'Časová os ciest',
     topRated: 'Najlepšie hodnotené',
