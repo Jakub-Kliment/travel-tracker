@@ -2,16 +2,32 @@ import { Country, Statistics, ContinentStats, TimelineEntry } from '../../shared
 import { isCountryVisited, getMostRecentVisitDate } from '../../shared/migration';
 import { format, parseISO, differenceInDays } from 'date-fns';
 
+// Continents are listed explicitly so the order stays stable in charts;
+// anything else found in the data is appended rather than silently dropped.
+const CONTINENT_ORDER = ['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania'];
+
 export const calculateStatistics = (countries: Country[]): Statistics => {
-  const totalCountries = countries.length;
-  const visitedCountries = countries.filter((c) => isCountryVisited(c));
+  // Territories and disputed areas are tracked but excluded from headline
+  // counts, so these totals match the ones shown on the map page.
+  const sovereignCountries = countries.filter((c) => !c.isTerritory);
+  const territories = countries.filter((c) => c.isTerritory);
+
+  const totalCountries = sovereignCountries.length;
+  const visitedCountries = sovereignCountries.filter((c) => isCountryVisited(c));
   const visitedCount = visitedCountries.length;
   const visitedPercentage = totalCountries > 0 ? (visitedCount / totalCountries) * 100 : 0;
 
+  const totalTerritories = territories.length;
+  const visitedTerritoryCount = territories.filter((c) => isCountryVisited(c)).length;
+
   // Calculate continent statistics
-  const continents = ['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania'];
+  const knownContinents = new Set(sovereignCountries.map((c) => c.continent));
+  const continents = [
+    ...CONTINENT_ORDER.filter((c) => knownContinents.has(c)),
+    ...[...knownContinents].filter((c) => !CONTINENT_ORDER.includes(c)).sort(),
+  ];
   const continentStats: ContinentStats[] = continents.map((continent) => {
-    const continentCountries = countries.filter((c) => c.continent === continent);
+    const continentCountries = sovereignCountries.filter((c) => c.continent === continent);
     const continentVisited = continentCountries.filter((c) => isCountryVisited(c));
     const total = continentCountries.length;
     const visited = continentVisited.length;
@@ -25,11 +41,15 @@ export const calculateStatistics = (countries: Country[]): Statistics => {
     };
   });
 
+  // Timeline and trip totals cover territories too: a trip to Greenland is
+  // still a trip, even though it does not count toward the country total.
+  const allVisited = countries.filter((c) => isCountryVisited(c));
+
   // Create timeline using most recent visit dates
   const timeline: TimelineEntry[] = [];
   const dateMap = new Map<string, { names: string[]; codes: string[] }>();
 
-  visitedCountries.forEach((country) => {
+  allVisited.forEach((country) => {
     const visitDate = getMostRecentVisitDate(country);
     if (visitDate) {
       try {
@@ -56,7 +76,7 @@ export const calculateStatistics = (countries: Country[]): Statistics => {
   let totalDaysTraveled = 0;
   let totalTrips = 0;
 
-  visitedCountries.forEach((country) => {
+  allVisited.forEach((country) => {
     country.visits.forEach((visit) => {
       totalTrips++;
       try {
@@ -77,6 +97,8 @@ export const calculateStatistics = (countries: Country[]): Statistics => {
     totalCountries,
     visitedCount,
     visitedPercentage,
+    totalTerritories,
+    visitedTerritoryCount,
     continentStats,
     timeline,
     totalDaysTraveled,

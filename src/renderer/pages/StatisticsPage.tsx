@@ -14,9 +14,15 @@ import {
 } from 'recharts';
 import { Country } from '../../shared/types';
 import { calculateStatistics } from '../utils/statistics';
-import { isCountryVisited, getMostRecentVisitDate } from '../../shared/migration';
+import {
+  isCountryVisited,
+  getMostRecentVisitDate,
+  getMostRecentVisit,
+  getBestRating,
+} from '../../shared/migration';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import FlagIcon from '../components/FlagIcon';
+import StarRating from '../components/StarRating';
 import '../styles/StatisticsPage.css';
 
 interface StatisticsPageProps {
@@ -30,8 +36,20 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
-  const visitedCountries = countries.filter((c) => isCountryVisited(c));
-  const notVisitedCountries = countries.filter((c) => !isCountryVisited(c));
+  // Territories are listed separately from sovereign countries so that the
+  // counts here match the ones shown on the map page.
+  const sovereignCountries = countries.filter((c) => !c.isTerritory);
+  const visitedCountries = sovereignCountries.filter((c) => isCountryVisited(c));
+  const notVisitedCountries = sovereignCountries.filter((c) => !isCountryVisited(c));
+  const visitedTerritories = countries.filter((c) => c.isTerritory && isCountryVisited(c));
+
+  // Ranked by the best rating given to a country across all of its visits,
+  // so a country rated on a later trip is not overlooked.
+  const ratedCountries = countries
+    .filter((c) => isCountryVisited(c))
+    .map((country) => ({ country, rating: getBestRating(country) }))
+    .filter((entry): entry is { country: Country; rating: number } => entry.rating !== undefined)
+    .sort((a, b) => b.rating - a.rating);
 
   const pieData = [
     { name: 'Visited', value: stats.visitedCount },
@@ -51,7 +69,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
         <div className="stat-card large">
           <h2>World Progress</h2>
           <div className="stat-value">{stats.visitedCount}</div>
-          <div className="stat-label">Countries Visited</div>
+          <div className="stat-label">of {stats.totalCountries} Countries Visited</div>
           <div className="progress-bar">
             <div
               className="progress-fill"
@@ -59,6 +77,11 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
             ></div>
           </div>
           <p className="stat-percentage">{stats.visitedPercentage.toFixed(1)}% Complete</p>
+          {stats.visitedTerritoryCount > 0 && (
+            <p className="stat-meta">
+              +{stats.visitedTerritoryCount} of {stats.totalTerritories} territories
+            </p>
+          )}
         </div>
 
         {/* Travel Duration Stats */}
@@ -114,7 +137,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
               })
               .map((country) => {
                 const visitDate = getMostRecentVisitDate(country);
-                const visitType = country.visits[0]?.visitType;
+                const visitType = getMostRecentVisit(country)?.visitType;
                 return (
                   <div
                     key={country.code}
@@ -207,6 +230,30 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
           </div>
         </div>
 
+        {/* Visited Territories */}
+        {visitedTerritories.length > 0 && (
+          <div className="stat-card">
+            <h3>Territories &amp; Disputed Areas ({visitedTerritories.length})</h3>
+            <div className="country-list">
+              {visitedTerritories
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((territory) => (
+                  <div
+                    key={territory.code}
+                    className="country-item visited clickable"
+                    onClick={() => setSelectedCountry(territory)}
+                  >
+                    <span className="country-name-with-flag">
+                      <FlagIcon countryCode={territory.code} size="small" />
+                      {territory.name}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Timeline */}
         {stats.timeline.length > 0 && (
           <div className="stat-card wide">
@@ -243,16 +290,13 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
         )}
 
         {/* Top Rated Countries */}
-        {visitedCountries.filter(c => c.visits[0]?.rating).length > 0 && (
+        {ratedCountries.length > 0 && (
           <div className="stat-card">
             <h3>Top Rated Countries</h3>
             <div className="ranking-list">
-              {visitedCountries
-                .filter(c => c.visits[0]?.rating)
-                .sort((a, b) => (b.visits[0]?.rating || 0) - (a.visits[0]?.rating || 0))
+              {ratedCountries
                 .slice(0, 10)
-                .map((country, index) => {
-                  const rating = country.visits[0].rating || 0;
+                .map(({ country, rating }, index) => {
                   return (
                     <div
                       key={country.code}
@@ -263,35 +307,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                       <FlagIcon countryCode={country.code} size="small" />
                       <span className="country-name">{country.name}</span>
                       <div className="rating-stars-small">
-                        {Array.from({ length: 5 }, (_, i) => {
-                          const starIndex = i + 1;
-                          // For rating 3.4: stars 1,2,3 full, star 4 is 4/10 = 40%
-                          const wholeStars = Math.floor(rating);
-                          const decimal = rating - wholeStars; // 0.0-0.9
-
-                          let fillPercent = 0;
-                          if (starIndex <= wholeStars) {
-                            fillPercent = 100;
-                          } else if (starIndex === wholeStars + 1) {
-                            // Star character renders non-linearly, scale down by half
-                            fillPercent = (decimal * 100) / 2;
-                          }
-
-                          return (
-                            <span key={i} className="star-container-display-small">
-                              <span className="star-bg">☆</span>
-                              {fillPercent > 0 && (
-                                <span
-                                  className="star-fill"
-                                  style={{ width: `${fillPercent}%` }}
-                                >
-                                  ★
-                                </span>
-                              )}
-                            </span>
-                          );
-                        })}
-                        <span className="rating-number-small">{rating.toFixed(1)}</span>
+                        <StarRating rating={rating} size="small" />
                       </div>
                     </div>
                   );
@@ -352,34 +368,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                       <div className="detail-row">
                         <span className="detail-label">Rating:</span>
                         <span className="detail-value rating-stars">
-                          {Array.from({ length: 5 }, (_, i) => {
-                            const rating = visit.rating || 0;
-                            const starIndex = i + 1;
-                            const wholeStars = Math.floor(rating);
-                            const decimal = rating - wholeStars;
-
-                            let fillPercent = 0;
-                            if (starIndex <= wholeStars) {
-                              fillPercent = 100;
-                            } else if (starIndex === wholeStars + 1) {
-                              fillPercent = (decimal * 100) / 2;
-                            }
-
-                            return (
-                              <span key={i} className="star-container-display">
-                                <span className="star-bg">☆</span>
-                                {fillPercent > 0 && (
-                                  <span
-                                    className="star-fill"
-                                    style={{ width: `${fillPercent}%` }}
-                                  >
-                                    ★
-                                  </span>
-                                )}
-                              </span>
-                            );
-                          })}
-                          <span className="rating-number">({visit.rating.toFixed(1)})</span>
+                          <StarRating rating={visit.rating} parenthesizeValue />
                         </span>
                       </div>
                     )}

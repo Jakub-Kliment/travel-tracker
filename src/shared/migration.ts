@@ -107,6 +107,30 @@ export function getTotalDaysInCountry(country: Country): number {
 }
 
 /**
+ * Returns the visit with the most recent start date.
+ * Visits are stored in insertion order, so this is not simply the last entry.
+ */
+export function getMostRecentVisit(country: Country): Visit | undefined {
+  return country.visits.reduce<Visit | undefined>((latest, visit) => {
+    if (!latest) return visit;
+    return new Date(visit.startDate).getTime() > new Date(latest.startDate).getTime()
+      ? visit
+      : latest;
+  }, undefined);
+}
+
+/**
+ * Returns the highest rating given across all visits to a country,
+ * or undefined if no visit was rated.
+ */
+export function getBestRating(country: Country): number | undefined {
+  const ratings = country.visits
+    .map((visit) => visit.rating)
+    .filter((rating): rating is number => typeof rating === 'number');
+  return ratings.length > 0 ? Math.max(...ratings) : undefined;
+}
+
+/**
  * Helper function to get all photos for a country
  */
 export function getAllPhotosForCountry(country: Country): string[] {

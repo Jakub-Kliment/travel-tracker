@@ -9,8 +9,9 @@ import {
 // Map geometry is bundled rather than fetched, so the app works fully offline.
 import worldAtlas from 'world-atlas/countries-50m.json';
 import { Country, Visit } from '../../shared/types';
-import { isCountryVisited } from '../../shared/migration';
+import { isCountryVisited, getMostRecentVisit } from '../../shared/migration';
 import FlagIcon from '../components/FlagIcon';
+import StarRating from '../components/StarRating';
 import '../styles/MapPage.css';
 
 interface MapPageProps {
@@ -217,22 +218,22 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
     }
   };
 
-  const getCountryFill = (geo: any): string => {
-    const country = getCountryByGeo(geo);
+  const getCountryFill = (country: Country | undefined, hovered = false): string => {
     const colors = colorSchemes[colorScheme];
     if (!country) return colors.territory;
 
     if (!isCountryVisited(country)) {
-      return colors.unvisited;
+      return hovered ? colors.unvisitedHover : colors.unvisited;
     }
 
-    // If color by visit type is enabled, use visit type colors
-    if (colorByVisitType && country.visits[0]) {
-      const visitType = country.visits[0].visitType || 'other';
-      return visitTypeColors[visitType].color;
+    // If color by visit type is enabled, colour by the most recent visit
+    if (colorByVisitType) {
+      const visitType = getMostRecentVisit(country)?.visitType || 'other';
+      const scheme = visitTypeColors[visitType];
+      return hovered ? scheme.hover : scheme.color;
     }
 
-    return colors.visited;
+    return hovered ? colors.visitedHover : colors.visited;
   };
 
   const handleZoomIn = () => {
@@ -465,7 +466,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                     <Geography
                       key={geo.rsmKey}
                       geography={geo}
-                      fill={getCountryFill(geo)}
+                      fill={getCountryFill(country)}
                       stroke="#1a202c"
                       strokeWidth={0.5}
                       style={{
@@ -474,18 +475,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                           transition: 'all 0.3s ease',
                         },
                         hover: {
-                          fill: (() => {
-                            if (!country) return colorSchemes[colorScheme].territory;
-                            if (!isCountryVisited(country)) return colorSchemes[colorScheme].unvisitedHover;
-
-                            // If color by visit type is enabled, use visit type hover colors
-                            if (colorByVisitType && country.visits[0]) {
-                              const visitType = country.visits[0].visitType || 'other';
-                              return visitTypeColors[visitType].hover;
-                            }
-
-                            return colorSchemes[colorScheme].visitedHover;
-                          })(),
+                          fill: getCountryFill(country, true),
                           outline: 'none',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
@@ -679,29 +669,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
                         )}
                         {visit.rating && (
                           <div className="visit-rating">
-                            {Array.from({ length: 5 }, (_, i) => {
-                              const rating = visit.rating || 0;
-                              const starIndex = i + 1;
-                              const wholeStars = Math.floor(rating);
-                              const decimal = rating - wholeStars;
-
-                              let fillPercent = 0;
-                              if (starIndex <= wholeStars) {
-                                fillPercent = 100;
-                              } else if (starIndex === wholeStars + 1) {
-                                fillPercent = (decimal * 100) / 2;
-                              }
-
-                              return (
-                                <span key={i} className="star-container-display-small">
-                                  <span className="star-bg">☆</span>
-                                  {fillPercent > 0 && (
-                                    <span className="star-fill" style={{ width: `${fillPercent}%` }}>★</span>
-                                  )}
-                                </span>
-                              );
-                            })}
-                            <span className="rating-number-small">{visit.rating.toFixed(1)}</span>
+                            <StarRating rating={visit.rating} size="small" />
                           </div>
                         )}
                         {visit.notes && (

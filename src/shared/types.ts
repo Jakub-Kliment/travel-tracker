@@ -37,9 +37,11 @@ export interface LegacyTravelData {
 }
 
 export interface Statistics {
-  totalCountries: number;
+  totalCountries: number;          // Sovereign countries only, excludes territories
   visitedCount: number;
   visitedPercentage: number;
+  totalTerritories: number;
+  visitedTerritoryCount: number;
   continentStats: ContinentStats[];
   timeline: TimelineEntry[];
   totalDaysTraveled: number;
