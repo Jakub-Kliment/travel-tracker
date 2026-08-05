@@ -35,7 +35,33 @@ This is a simple desktop app where you can click on countries you've been to, ad
 - Works completely offline - the map and flags are built into the app, so it never makes a network request
 - Cross-platform: Windows, Mac, and Linux
 
-## Getting Started
+## Installing
+
+Grab the latest build from the [Releases page](../../releases/latest) — no
+Node.js or building required.
+
+| Your computer | Download |
+| --- | --- |
+| Mac (Apple Silicon or Intel) | `Travel Tracker-<version>.dmg` |
+| Windows | `Travel Tracker Setup <version>.exe` |
+| Linux | `Travel Tracker-<version>.AppImage` |
+
+### On a Mac, open it the first time with a right-click
+
+The app is not signed with an Apple Developer certificate, so the first
+launch needs one extra step. **Double-clicking will simply refuse to open
+it** — that is macOS being cautious about an unknown developer, not a
+problem with the app.
+
+1. Drag **Travel Tracker** into your Applications folder.
+2. **Right-click** (or Control-click) the app and choose **Open**.
+3. Click **Open** again in the dialog that appears.
+
+macOS remembers the choice, so from then on it opens normally. On recent
+macOS versions the dialog may instead appear under
+*System Settings → Privacy & Security*, where you click **Open Anyway**.
+
+## Building it yourself
 
 You'll need Node.js (v16+) and npm installed.
 
@@ -69,11 +95,13 @@ The packaged app ends up in the `release` folder.
 
 **Editing trips:** Click on countries you've already visited to see all your trips there. You can edit or delete any of them.
 
-**Customizing the map:** Use the dropdowns at the top to change colors, map styles, and how things are displayed. Hit the ⛶ button (or ESC) for fullscreen mode.
+**Customizing the map:** Use the dropdowns at the top to change colors, map styles, and how things are displayed. Use the fullscreen button in the corner of the map (or ESC to leave it).
 
 **Stats page:** Switch to the Statistics tab to see all your numbers - countries visited, continents conquered, top destinations, travel timeline, and more.
 
-**Export:** Use the 📸 Image or 📄 PDF buttons in the navbar to export your map or generate a travel report.
+**Export:** Use the Image or PDF buttons in the navbar to export your map or generate a travel report.
+
+**Note:** the interface is in Slovak.
 
 
 ## Built with
@@ -81,6 +109,8 @@ The packaged app ends up in the `release` folder.
 Electron + React + TypeScript. Uses react-simple-maps for the interactive map and Recharts for the stats visualizations.
 
 
-**Version 1.2.0**
+**Version 1.3.0**
 
-Recent additions: multiple visits per country, photo gallery, star ratings, trip analytics, fullscreen mode, animations, and export features.
+Recent additions: "on this day" anniversaries and a strip of recent photos on
+the map page, every dependency and territory the map draws now tracked (197
+countries plus 42 territories), and a Slovak wording pass.
