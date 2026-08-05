@@ -45,10 +45,16 @@ export const t = {
     countryList: 'Zoznam krajín',
     fullscreen: 'Na celú obrazovku',
     exitFullscreen: 'Ukončiť celú obrazovku (ESC)',
+    // "pred" takes the instrumental: 1 → rokom, otherwise rokmi. Unlike the
+    // nominative there is no separate 2-4 form, so few and many coincide.
+    yearsAgo: (n: number) => `Pred ${n} ${plural(n, 'rokom', 'rokmi', 'rokmi')}`,
+    anniversaryMore: (n: number) => `+ ${n} ${plural(n, 'ďalšia', 'ďalšie', 'ďalších')}`,
     allCountries: (count: number) => `Všetky krajiny (${count})`,
     searchPlaceholder: 'Hľadať krajinu…',
     showTerritories: (count: number) => `Zobraziť územia a sporné oblasti (${count})`,
     close: 'Zavrieť',
+    recentPhotos: 'Nedávne fotografie',
+    morePhotos: (n: number) => `+ ${n}`,
   },
 
   visit: {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -13,8 +13,10 @@ import { isCountryVisited, getMostRecentVisit } from '../../shared/migration';
 import FlagIcon from '../components/FlagIcon';
 import StarRating from '../components/StarRating';
 import Icon from '../components/Icon';
-import { t, countryName, formatDateRange, visitTypeLabel, formatDecimal } from '../i18n';
+import { t, countryName, formatDateRange, visitTypeLabel, formatDecimal, formatDate } from '../i18n';
 import { countryIdToIso, territoryNameToIso } from './mapCodes';
+import { findAnniversaries } from '../utils/anniversaries';
+import { collectRecentPhotos } from '../utils/recentPhotos';
 import '../styles/MapPage.css';
 
 interface MapPageProps {
@@ -43,6 +45,12 @@ const resolveIsoCode = (geo: Geo): string | undefined => {
   if (!name) return undefined;
   return territoryNameToIso.find(([test]) => test(name))?.[1];
 };
+
+// Enough photos to read as a row of snapshots without crowding the map.
+const PHOTO_STRIP_LIMIT = 8;
+
+// One anniversary is the point; a long list would turn a memory into a report.
+const ANNIVERSARY_LIMIT = 2;
 
 type ProjectionType = 'geoEqualEarth' | 'geoMercator' | 'geoNaturalEarth1';
 
@@ -353,6 +361,11 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
   const visitedCountriesCount = regularCountries.filter(c => isCountryVisited(c)).length;
   const visitedTerritoriesCount = territories.filter(c => isCountryVisited(c)).length;
 
+  // Both strips read the whole country list, so they are recomputed only when
+  // it actually changes rather than on every hover or zoom.
+  const anniversaries = useMemo(() => findAnniversaries(countries), [countries]);
+  const recentPhotos = useMemo(() => collectRecentPhotos(countries, PHOTO_STRIP_LIMIT), [countries]);
+
   return (
     <div className={`map-page ${isFullscreen ? 'fullscreen' : ''}`}>
       {!isFullscreen && (
@@ -366,6 +379,35 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
             <p className="territories-note">{t.map.territoriesExtra(visitedTerritoriesCount)}</p>
           )}
         </div>
+
+        {/*
+          * On this day, some years ago. This is the one thing on the page that
+          * is worth opening the app for when nothing is being recorded.
+          */}
+        {anniversaries.length > 0 && (
+          <div className="anniversaries">
+            {anniversaries.slice(0, ANNIVERSARY_LIMIT).map((anniversary) => (
+              <button
+                key={`${anniversary.country.code}-${anniversary.visit.startDate}`}
+                type="button"
+                className="anniversary"
+                onClick={() => openCountryModal(anniversary.country)}
+              >
+                <span className="anniversary-years">{t.map.yearsAgo(anniversary.yearsAgo)}</span>
+                <span className="anniversary-country">
+                  <FlagIcon countryCode={anniversary.country.code} size="small" />
+                  {countryName(anniversary.country)}
+                </span>
+                <span className="anniversary-date">{formatDate(anniversary.visit.startDate)}</span>
+              </button>
+            ))}
+            {anniversaries.length > ANNIVERSARY_LIMIT && (
+              <span className="anniversary-more">
+                {t.map.anniversaryMore(anniversaries.length - ANNIVERSARY_LIMIT)}
+              </span>
+            )}
+          </div>
+        )}
         <div className="map-legend">
           {colorByVisitType ? (
             <>
@@ -614,6 +656,32 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
           </div>
         )}
       </div>
+
+      {/*
+        * A row of snapshots under the map, so photos are visible without
+        * having to remember which country they were filed under. Clicking one
+        * opens the trip it belongs to rather than just the image, which is
+        * the context that makes it worth looking at.
+        */}
+      {!isFullscreen && recentPhotos.length > 0 && (
+        <div className="photo-strip">
+          <h3 className="photo-strip-title">{t.map.recentPhotos}</h3>
+          <div className="photo-strip-items">
+            {recentPhotos.map((photo) => (
+              <button
+                key={`${photo.country.code}-${photo.path}`}
+                type="button"
+                className="photo-strip-item"
+                onClick={() => openCountryModal(photo.country)}
+                title={`${countryName(photo.country)} · ${formatDate(photo.visit.startDate)}`}
+              >
+                <img src={`atom://${photo.path}`} alt={countryName(photo.country)} />
+                <span className="photo-strip-caption">{countryName(photo.country)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {editingCountry && (
         <div className="modal-overlay" onClick={handleCloseModal}>

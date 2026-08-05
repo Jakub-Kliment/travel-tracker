@@ -57,6 +57,20 @@ describe('map wording', () => {
     expect(t.map.territoriesExtra(2)).toBe('+ 2 územia');
     expect(t.map.territoriesExtra(5)).toBe('+ 5 území');
   });
+
+  // "pred" governs the instrumental, where 2-4 and 5+ share one form.
+  it('puts the anniversary year count in the instrumental', () => {
+    expect(t.map.yearsAgo(1)).toBe('Pred 1 rokom');
+    expect(t.map.yearsAgo(3)).toBe('Pred 3 rokmi');
+    expect(t.map.yearsAgo(12)).toBe('Pred 12 rokmi');
+  });
+
+  // Agrees with the feminine "spomienka", which the count stands in for.
+  it('agrees the extra-anniversary count in the feminine', () => {
+    expect(t.map.anniversaryMore(1)).toBe('+ 1 ďalšia');
+    expect(t.map.anniversaryMore(2)).toBe('+ 2 ďalšie');
+    expect(t.map.anniversaryMore(5)).toBe('+ 5 ďalších');
+  });
 });
 
 describe('formatDecimal', () => {
