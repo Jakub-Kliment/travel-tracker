@@ -49,6 +49,16 @@ export const isoThreeToTwo: Record<string, string> = {
     'VEN': 've', 'VNM': 'vn', 'YEM': 'ye', 'ZMB': 'zm', 'ZWE': 'zw',
   // Disputed territories and special cases
     'GRL': 'gl', 'ESH': 'eh', 'XKX': 'xk', 'TWN': 'tw', 'ATA': 'aq',
+  // Dependencies and overseas territories the world atlas draws separately.
+  // Without these the geometry renders as inert land: no flag, no Slovak name.
+    'ABW': 'aw', 'AIA': 'ai', 'ALA': 'ax', 'ASM': 'as', 'ATF': 'tf',
+    'BLM': 'bl', 'BMU': 'bm', 'COK': 'ck', 'CUW': 'cw', 'CYM': 'ky',
+    'FLK': 'fk', 'FRO': 'fo', 'GGY': 'gg', 'GUM': 'gu', 'HKG': 'hk',
+    'HMD': 'hm', 'IMN': 'im', 'IOT': 'io', 'JEY': 'je', 'MAC': 'mo',
+    'MAF': 'mf', 'MNP': 'mp', 'MSR': 'ms', 'NCL': 'nc', 'NFK': 'nf',
+    'NIU': 'nu', 'PCN': 'pn', 'PRI': 'pr', 'PYF': 'pf', 'SGS': 'gs',
+    'SHN': 'sh', 'SPM': 'pm', 'SXM': 'sx', 'TCA': 'tc', 'VGB': 'vg',
+    'VIR': 'vi', 'WLF': 'wf',
 };
 
 /** The two-letter code for a country, if one exists. */

@@ -213,10 +213,66 @@ export const getAllCountries = (): Country[] => {
     { code: 'VUT', name: 'Vanuatu', visits: [], continent: 'Oceania' },
 
     // Disputed Territories & Dependencies (optional to track)
+    //
+    // Everything below is drawn as its own shape by world-atlas, so each entry
+    // here is what makes that shape clickable. A code present in the atlas but
+    // absent from this list renders as inert land: it looks like somewhere you
+    // could visit, but nothing happens when you click it.
     { code: 'GRL', name: 'Greenland', visits: [], continent: 'North America', isTerritory: true },
     { code: 'ESH', name: 'Western Sahara', visits: [], continent: 'Africa', isTerritory: true },
     { code: 'SOL', name: 'Somaliland', visits: [], continent: 'Africa', isTerritory: true },
     { code: 'NCY', name: 'Northern Cyprus', visits: [], continent: 'Europe', isTerritory: true },
     { code: 'ATA', name: 'Antarctica', visits: [], continent: 'Antarctica', isTerritory: true },
+
+    // Africa
+    { code: 'IOT', name: 'British Indian Ocean Territory', visits: [], continent: 'Africa', isTerritory: true },
+    { code: 'SHN', name: 'Saint Helena', visits: [], continent: 'Africa', isTerritory: true },
+
+    // Asia
+    { code: 'HKG', name: 'Hong Kong', visits: [], continent: 'Asia', isTerritory: true },
+    { code: 'MAC', name: 'Macao', visits: [], continent: 'Asia', isTerritory: true },
+
+    // Europe
+    { code: 'ALA', name: 'Åland Islands', visits: [], continent: 'Europe', isTerritory: true },
+    { code: 'FRO', name: 'Faroe Islands', visits: [], continent: 'Europe', isTerritory: true },
+    { code: 'GGY', name: 'Guernsey', visits: [], continent: 'Europe', isTerritory: true },
+    { code: 'IMN', name: 'Isle of Man', visits: [], continent: 'Europe', isTerritory: true },
+    { code: 'JEY', name: 'Jersey', visits: [], continent: 'Europe', isTerritory: true },
+
+    // North America
+    { code: 'ABW', name: 'Aruba', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'AIA', name: 'Anguilla', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'BLM', name: 'Saint Barthélemy', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'BMU', name: 'Bermuda', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'CUW', name: 'Curaçao', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'CYM', name: 'Cayman Islands', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'MAF', name: 'Saint Martin', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'MSR', name: 'Montserrat', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'PRI', name: 'Puerto Rico', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'SPM', name: 'Saint Pierre and Miquelon', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'SXM', name: 'Sint Maarten', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'TCA', name: 'Turks and Caicos Islands', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'VGB', name: 'British Virgin Islands', visits: [], continent: 'North America', isTerritory: true },
+    { code: 'VIR', name: 'United States Virgin Islands', visits: [], continent: 'North America', isTerritory: true },
+
+    // South America
+    { code: 'FLK', name: 'Falkland Islands', visits: [], continent: 'South America', isTerritory: true },
+
+    // Oceania
+    { code: 'ASM', name: 'American Samoa', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'COK', name: 'Cook Islands', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'GUM', name: 'Guam', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'MNP', name: 'Northern Mariana Islands', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'NCL', name: 'New Caledonia', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'NFK', name: 'Norfolk Island', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'NIU', name: 'Niue', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'PCN', name: 'Pitcairn Islands', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'PYF', name: 'French Polynesia', visits: [], continent: 'Oceania', isTerritory: true },
+    { code: 'WLF', name: 'Wallis and Futuna', visits: [], continent: 'Oceania', isTerritory: true },
+
+    // Antarctic and sub-Antarctic
+    { code: 'ATF', name: 'French Southern and Antarctic Lands', visits: [], continent: 'Antarctica', isTerritory: true },
+    { code: 'HMD', name: 'Heard Island and McDonald Islands', visits: [], continent: 'Antarctica', isTerritory: true },
+    { code: 'SGS', name: 'South Georgia and the South Sandwich Islands', visits: [], continent: 'Antarctica', isTerritory: true },
   ];
 };

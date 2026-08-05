@@ -15,7 +15,10 @@ const FONTS = ['Inter-Regular.ttf', 'Inter-SemiBold.ttf'];
 const REQUIRED =
   Array.from({ length: 0x7f - 0x20 }, (_, i) => String.fromCharCode(0x20 + i)).join('') +
   'áäčďéíĺľňóôŕšťúýžÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ' +
-  '×·–—„“”’€';
+  '×·–—„“”’€' +
+  // Not Slovak letters, but they occur in territory names the report lists:
+  // Curaçao, Åland, Saint-Barthélemy.
+  'çÇåÅ';
 
 /** Reads the set of code points a TrueType font's cmap covers. */
 function codePoints(file: string): Set<number> {

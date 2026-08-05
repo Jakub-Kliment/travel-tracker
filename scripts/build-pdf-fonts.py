@@ -33,6 +33,9 @@ CHARS = (
     ''.join(chr(c) for c in range(0x20, 0x7F))
     + 'áäčďéíĺľňóôŕšťúýžÁÄČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ'
     + '×·–—…„“”‚‘’€'
+    # Letters that appear only in the localised names of territories the report
+    # can list, not in Slovak itself: Curaçao, Åland, Saint-Barthélemy.
+    + 'çÇåÅ'
 )
 
 
