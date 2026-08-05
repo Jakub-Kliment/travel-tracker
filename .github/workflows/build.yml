@@ -46,8 +46,23 @@ jobs:
       contents: write
 
     strategy:
+      # One platform failing must not cancel the other two: a Windows problem
+      # should still leave a downloadable Mac build behind.
+      fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+          - os: macos-latest
+            script: package:mac
+            artifact: '*.dmg'
+            label: macOS
+          - os: ubuntu-latest
+            script: package:linux
+            artifact: '*.AppImage'
+            label: Linux
+          - os: windows-latest
+            script: package:win
+            artifact: '*.exe'
+            label: Windows
 
     steps:
       - name: Checkout code
@@ -64,54 +79,32 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Package for macOS
-        if: matrix.os == 'macos-latest'
-        run: npm run package:mac
+      - name: Package application
+        run: npm run ${{ matrix.script }}
 
-      - name: Package for Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: npm run package:linux
-
-      - name: Package for Windows
-        if: matrix.os == 'windows-latest'
-        run: npm run package:win
-
-      - name: Upload artifacts (macOS)
-        if: matrix.os == 'macos-latest'
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Travel-Tracker-macOS
-          path: release/*.dmg
+          name: Travel-Tracker-${{ matrix.label }}
+          path: release/${{ matrix.artifact }}
+          if-no-files-found: error
 
-      - name: Upload artifacts (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Travel-Tracker-Linux
-          path: release/*.AppImage
-
-      - name: Upload artifacts (Windows)
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Travel-Tracker-Windows
-          path: release/*.exe
-
-      # Each of the three runners uploads only what it built. The action
-      # creates the release on first use and adds to it afterwards, so the
-      # files accumulate rather than the runners overwriting each other.
+      # Each runner attaches only the artifact it actually built. Listing all
+      # three globs here fails every runner, since a Linux box has no .dmg and
+      # no .exe to match -- which is what left earlier tags with no download
+      # behind them. The action creates the release on first use and adds to it
+      # afterwards, so the files still accumulate across the three runners.
       #
       # This must not be continue-on-error: a failed upload here means the
       # tag exists with no downloadable app behind it, which is exactly the
-      # failure worth being told about.
+      # failure worth being told about. Paired with the single glob above,
+      # fail_on_unmatched_files now catches only a genuinely empty package
+      # step.
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            release/*.dmg
-            release/*.AppImage
-            release/*.exe
+          files: release/${{ matrix.artifact }}
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
