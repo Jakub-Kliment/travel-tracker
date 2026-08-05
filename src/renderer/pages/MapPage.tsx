@@ -13,7 +13,7 @@ import { isCountryVisited, getMostRecentVisit } from '../../shared/migration';
 import FlagIcon from '../components/FlagIcon';
 import StarRating from '../components/StarRating';
 import Icon from '../components/Icon';
-import { t, countryName, formatDateRange, visitTypeLabel } from '../i18n';
+import { t, countryName, formatDateRange, visitTypeLabel, formatDecimal } from '../i18n';
 import '../styles/MapPage.css';
 
 interface MapPageProps {
@@ -414,7 +414,7 @@ const MapPage: React.FC<MapPageProps> = ({ countries, onToggleCountry, onUpdateV
         <div className="map-stats">
           <h2>{t.map.countriesVisited(visitedCountriesCount, regularCountries.length)}</h2>
           <p className="percentage">
-            {t.map.percentExplored(((visitedCountriesCount / regularCountries.length) * 100).toFixed(1))}
+            {t.map.percentExplored(formatDecimal((visitedCountriesCount / regularCountries.length) * 100))}
           </p>
           {visitedTerritoriesCount > 0 && (
             <p className="territories-note">{t.map.territoriesExtra(visitedTerritoriesCount)}</p>

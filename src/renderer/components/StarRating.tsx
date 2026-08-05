@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDecimal } from '../i18n';
 
 interface StarRatingProps {
   rating: number;
@@ -52,7 +53,7 @@ const StarRating: React.FC<StarRatingProps> = ({
       })}
       {showValue && (
         <span className={valueClass}>
-          {parenthesizeValue ? `(${rating.toFixed(1)})` : rating.toFixed(1)}
+          {parenthesizeValue ? `(${formatDecimal(rating)})` : formatDecimal(rating)}
         </span>
       )}
     </>

@@ -23,7 +23,15 @@ import {
 import { parseISO, differenceInDays } from 'date-fns';
 import FlagIcon from '../components/FlagIcon';
 import StarRating from '../components/StarRating';
-import { t, continentName, countryName, visitTypeLabel, formatDate, formatMonthYear } from '../i18n';
+import {
+  t,
+  continentName,
+  countryName,
+  visitTypeLabel,
+  formatDate,
+  formatMonthYear,
+  formatDecimal,
+} from '../i18n';
 import '../styles/StatisticsPage.css';
 
 interface StatisticsPageProps {
@@ -112,7 +120,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
               style={{ width: `${stats.visitedPercentage}%` }}
             ></div>
           </div>
-          <p className="stat-percentage">{t.stats.percentComplete(stats.visitedPercentage.toFixed(1))}</p>
+          <p className="stat-percentage">{t.stats.percentComplete(formatDecimal(stats.visitedPercentage))}</p>
           {stats.visitedTerritoryCount > 0 && (
             <p className="stat-meta">
               {t.stats.territoriesLine(stats.visitedTerritoryCount, stats.totalTerritories)}
@@ -129,7 +137,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
 
         <div className="stat-card">
           <h3>{t.stats.averageTrip}</h3>
-          <div className="stat-value">{stats.averageTripLength.toFixed(1)}</div>
+          <div className="stat-value">{formatDecimal(stats.averageTripLength)}</div>
           <div className="stat-label">{t.stats.daysPerTrip}</div>
           <p className="stat-meta">{t.stats.totalTrips(stats.totalTrips)}</p>
         </div>
@@ -224,7 +232,7 @@ const StatisticsPage: React.FC<StatisticsPageProps> = ({ countries }) => {
                     style={{ width: `${cs.percentage}%`, backgroundColor: BAR_COLOR }}
                   ></div>
                 </div>
-                <span className="continent-percentage">{cs.percentage.toFixed(1)}%</span>
+                <span className="continent-percentage">{formatDecimal(cs.percentage)} %</span>
               </div>
             ))}
           </div>

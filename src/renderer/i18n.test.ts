@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { t, plural, countryName, continentName, visitTypeLabel } from './i18n';
+import { t, plural, countryName, continentName, visitTypeLabel, formatDecimal } from './i18n';
 import { getAllCountries } from './utils/countries';
 import { isoThreeToTwo } from './utils/isoCodes';
 
@@ -14,9 +14,10 @@ describe('plural', () => {
 });
 
 describe('statistics wording', () => {
+  // Both the noun and the participle after it agree with the count.
   it('agrees the day count with the number in front of it', () => {
-    expect(t.stats.daysOnRoad(1)).toBe('deň strávených mimo domova');
-    expect(t.stats.daysOnRoad(3)).toBe('dni strávených mimo domova');
+    expect(t.stats.daysOnRoad(1)).toBe('deň strávený mimo domova');
+    expect(t.stats.daysOnRoad(3)).toBe('dni strávené mimo domova');
     expect(t.stats.daysOnRoad(207)).toBe('dní strávených mimo domova');
   });
 
@@ -35,7 +36,40 @@ describe('statistics wording', () => {
 
   it('does not leave a stray space before the percent sign', () => {
     // Slovak puts a space before %, but it must be a single one.
-    expect(t.stats.percentComplete('9.1')).toBe('9.1 % sveta');
+    expect(t.stats.percentComplete('9,1')).toBe('9,1 % sveta');
+  });
+});
+
+describe('map wording', () => {
+  // "zo" is only used before an s-/z- cluster; a numeral never starts with one.
+  it('uses the plain preposition before the country total', () => {
+    expect(t.map.countriesVisited(18, 197)).toBe('18 z 197 krajín');
+  });
+
+  // The participle agrees with "sveta", not with the percentage before it.
+  it('agrees the participle with "sveta" rather than the number', () => {
+    expect(t.map.percentExplored('9,1')).toBe('9,1 % sveta preskúmaného');
+    expect(t.map.percentExplored('1,0')).toBe('1,0 % sveta preskúmaného');
+  });
+
+  it('agrees the territory count with its own number', () => {
+    expect(t.map.territoriesExtra(1)).toBe('+ 1 územie');
+    expect(t.map.territoriesExtra(2)).toBe('+ 2 územia');
+    expect(t.map.territoriesExtra(5)).toBe('+ 5 území');
+  });
+});
+
+describe('formatDecimal', () => {
+  it('writes the decimal separator as a comma', () => {
+    expect(formatDecimal(9.14)).toBe('9,1');
+    expect(formatDecimal(0)).toBe('0,0');
+    expect(formatDecimal(12)).toBe('12,0');
+  });
+
+  it('never emits a decimal point, which would read as English', () => {
+    for (const value of [0, 1.05, 33.333, 100]) {
+      expect(formatDecimal(value)).not.toContain('.');
+    }
   });
 });
 

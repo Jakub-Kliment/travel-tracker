@@ -4,7 +4,7 @@ import StatisticsPage from './pages/StatisticsPage';
 import { TravelData, Visit, ReportData } from '../shared/types';
 import { getAllCountries } from './utils/countries';
 import Icon from './components/Icon';
-import { t, countryName, continentName } from './i18n';
+import { t, countryName, continentName, formatDecimal } from './i18n';
 import './styles/App.css';
 
 type Page = 'map' | 'statistics';
@@ -163,15 +163,15 @@ const App: React.FC = () => {
       const reportData: ReportData = {
         visitedCount: stats.visitedCount,
         totalCountries: stats.totalCountries,
-        visitedPercentage: stats.visitedPercentage.toFixed(1),
+        visitedPercentage: formatDecimal(stats.visitedPercentage),
         totalDaysTraveled: stats.totalDaysTraveled,
-        averageTripLength: stats.averageTripLength.toFixed(1),
+        averageTripLength: formatDecimal(stats.averageTripLength),
         totalTrips: stats.totalTrips,
         continentStats: stats.continentStats.map(cs => ({
           continent: continentName(cs.continent),
           visited: cs.visited,
           total: cs.total,
-          percentage: cs.percentage.toFixed(1),
+          percentage: formatDecimal(cs.percentage),
         })),
         visitedCountries: travelData.countries
           .filter(c => c.visits.length > 0)

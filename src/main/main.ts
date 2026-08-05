@@ -381,7 +381,7 @@ ipcMain.handle('generate-pdf-report', async (_event, reportData: ReportData) => 
 
     heading('Podľa kontinentov');
     reportData.continentStats.forEach((cs) => {
-      line(`${cs.continent}: ${cs.visited} / ${cs.total} (${cs.percentage}%)`);
+      line(`${cs.continent}: ${cs.visited} / ${cs.total} (${cs.percentage} %)`);
     });
 
     heading(`Navštívené krajiny (${reportData.visitedCountries.length})`);

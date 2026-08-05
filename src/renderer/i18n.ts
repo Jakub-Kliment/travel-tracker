@@ -16,8 +16,12 @@ export const t = {
   },
 
   map: {
-    countriesVisited: (visited: number, total: number) => `${visited} zo ${total} krajín`,
-    percentExplored: (pct: string) => `${pct} % sveta preskúmaných`,
+    // "z" governs the genitive plural; "zo" is only used before s-/z- clusters,
+    // and a numeral read as "stodeväťdesiatich" does not start with one.
+    countriesVisited: (visited: number, total: number) => `${visited} z ${total} krajín`,
+    // The participle agrees with "sveta" (masculine singular genitive), not
+    // with the percentage in front of it.
+    percentExplored: (pct: string) => `${pct} % sveta preskúmaného`,
     territoriesExtra: (count: number) => `+ ${count} ${plural(count, 'územie', 'územia', 'území')}`,
     legendVisited: 'Navštívené',
     legendNotVisited: 'Nenavštívené',
@@ -67,7 +71,8 @@ export const t = {
     rating: 'Hodnotenie',
     clearRating: 'Zrušiť hodnotenie',
     notes: 'Poznámky a spomienky',
-    notesPlaceholder: 'Zážitky, ľudia, jedlo, čokoľvek stojí za zapamätanie…',
+    // "čokoľvek" needs the relative pronoun "čo" before the verb.
+    notesPlaceholder: 'Zážitky, ľudia, jedlo, čokoľvek, čo stojí za zapamätanie…',
     photos: 'Fotografie',
     addPhotos: 'Pridať fotografie',
     removePhoto: 'Odstrániť fotografiu',
@@ -93,7 +98,10 @@ export const t = {
 
     // — Cesty (trip totals)
     totalDays: 'Dni na cestách',
-    daysOnRoad: (n: number) => `${plural(n, 'deň', 'dni', 'dní')} strávených mimo domova`,
+    // Both the noun and the participle agree with the count: "deň strávený",
+    // "dni strávené", "dní strávených".
+    daysOnRoad: (n: number) =>
+      `${plural(n, 'deň', 'dni', 'dní')} ${plural(n, 'strávený', 'strávené', 'strávených')} mimo domova`,
     averageTrip: 'Priemerná dĺžka cesty',
     daysPerTrip: 'dní na jednu cestu',
     totalTrips: (n: number) => `spolu ${n} ${plural(n, 'cesta', 'cesty', 'ciest')}`,
@@ -108,7 +116,9 @@ export const t = {
 
     // — Zoznamy (lists)
     visitedCountries: (n: number) => `Navštívené krajiny (${n})`,
-    bucketList: (n: number) => `Kam sa ešte chystám (${n})`,
+    // The rest of the UI addresses the reader formally rather than speaking in
+    // the first person, so this heading stays impersonal too.
+    bucketList: (n: number) => `Kam sa ešte dá vycestovať (${n})`,
     territories: (n: number) => `Územia a sporné oblasti (${n})`,
     timeline: 'Časová os ciest',
     topRated: 'Najlepšie hodnotené',
@@ -159,6 +169,15 @@ const regionNames = new Intl.DisplayNames(['sk'], { type: 'region' });
 const localCountryNames: Record<string, string> = {
   SOL: 'Somaliland',
   NCY: 'Severný Cyprus',
+  // CLDR gives these as "Hongkong – OAO Číny" and "Macao – OAO Číny". The
+  // administrative-region suffix is correct but reads like a form, so the
+  // plain city name is used instead.
+  HKG: 'Hongkong',
+  MAC: 'Macao',
+  // CLDR disambiguates the two halves of Saint Martin with "(fr.)" and
+  // "(hol.)", which is unhelpfully terse; spell the distinction out.
+  MAF: 'Svätý Martin (Francúzsko)',
+  SXM: 'Svätý Martin (Holandsko)',
 };
 
 /**
@@ -190,6 +209,16 @@ export const visitTypeLabel = (type: string): string =>
   })[type] ?? type;
 
 const LOCALE = 'sk-SK';
+
+/**
+ * Slovak writes the decimal separator as a comma. `toFixed` always produces a
+ * point, so every number shown to the user goes through here instead.
+ */
+export const formatDecimal = (value: number, digits = 1): string =>
+  value.toLocaleString(LOCALE, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 
 /** "14. marca 2023" */
 export const formatDate = (iso: string): string =>
